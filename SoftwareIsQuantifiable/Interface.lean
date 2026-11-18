@@ -841,15 +841,30 @@ theorem uniqueSymbols_append {Symbol Measure : Type}
   rcases List.mem_map.mp ht with ⟨q, hq, rfl⟩
   exact hd p hp q hq
 
+/-- Every profile in the release has one reading per axis. -/
+def profilesAligned {Symbol Measure : Type}
+    (space : MeasureSpace Measure) (R : Release Symbol Measure) : Prop :=
+  ∀ p ∈ R, aligned space p
+
+theorem profilesAligned_append {Symbol Measure : Type}
+    {space : MeasureSpace Measure} {left right : Release Symbol Measure}
+    (hL : profilesAligned space left) (hR : profilesAligned space right) :
+    profilesAligned space (left ++ right) := by
+  intro p hp
+  cases List.mem_append.mp hp with
+  | inl hl => exact hL p hl
+  | inr hr => exact hR p hr
+
 /-- Every incumbent symbol still has a `noWorse` profile in the
-    candidate, and each release names each symbol at most once. A
-    regressing duplicate of a symbol that also has a no-worse profile
-    does not pass. Symbols the candidate adds, once each, are
-    unconstrained. -/
+    candidate, each release names each symbol at most once, and every
+    profile in either release covers the measure space. A symbol the
+    candidate adds is not compared with an incumbent. Its readings
+    still have to have one entry per axis. -/
 def releaseLe {Symbol Measure : Type}
     (space : MeasureSpace Measure)
     (candidate incumbent : Release Symbol Measure) : Prop :=
   uniqueSymbols candidate ∧ uniqueSymbols incumbent ∧
+    profilesAligned space candidate ∧ profilesAligned space incumbent ∧
     ∀ q ∈ incumbent, ∃ p ∈ candidate, noWorse space p q
 
 /-- Pareto dominance of one assembly over another: `releaseLe`, and at
@@ -864,17 +879,17 @@ theorem releaseLe_refl {Symbol Measure : Type}
     {space : MeasureSpace Measure} {R : Release Symbol Measure}
     (hU : uniqueSymbols R) (h : ∀ p ∈ R, aligned space p) :
     releaseLe space R R :=
-  ⟨hU, hU, fun q hq => ⟨q, hq, noWorse_refl (h q hq)⟩⟩
+  ⟨hU, hU, h, h, fun q hq => ⟨q, hq, noWorse_refl (h q hq)⟩⟩
 
 theorem releaseLe_trans {Symbol Measure : Type}
     {space : MeasureSpace Measure}
     {c b a : Release Symbol Measure}
     (hcb : releaseLe space c b) (hba : releaseLe space b a) :
     releaseLe space c a := by
-  refine ⟨hcb.1, hba.2.1, ?_⟩
+  refine ⟨hcb.1, hba.2.1, hcb.2.2.1, hba.2.2.2.1, ?_⟩
   intro q hq
-  obtain ⟨p, hp, hle⟩ := hba.2.2 q hq
-  obtain ⟨p', hp', hle'⟩ := hcb.2.2 p hp
+  obtain ⟨p, hp, hle⟩ := hba.2.2.2.2 q hq
+  obtain ⟨p', hp', hle'⟩ := hcb.2.2.2.2 p hp
   exact ⟨p', hp', noWorse_trans hle' hle⟩
 
 /-- Assemblies of disjoint symbols compose. If each component assembly
@@ -886,14 +901,16 @@ theorem releaseLe_append {Symbol Measure : Type}
     (hc : symbolsDisjoint c1 c2) (hi : symbolsDisjoint i1 i2) :
     releaseLe space (c1 ++ c2) (i1 ++ i2) := by
   refine ⟨uniqueSymbols_append h1.1 h2.1 hc,
-    uniqueSymbols_append h1.2.1 h2.2.1 hi, ?_⟩
+    uniqueSymbols_append h1.2.1 h2.2.1 hi,
+    profilesAligned_append h1.2.2.1 h2.2.2.1,
+    profilesAligned_append h1.2.2.2.1 h2.2.2.2.1, ?_⟩
   intro q hq
   cases List.mem_append.mp hq with
   | inl hl =>
-    obtain ⟨p, hp, hle⟩ := h1.2.2 q hl
+    obtain ⟨p, hp, hle⟩ := h1.2.2.2.2 q hl
     exact ⟨p, List.mem_append_left _ hp, hle⟩
   | inr hr =>
-    obtain ⟨p, hp, hle⟩ := h2.2.2 q hr
+    obtain ⟨p, hp, hle⟩ := h2.2.2.2.2 q hr
     exact ⟨p, List.mem_append_right _ hp, hle⟩
 
 theorem releaseDominates_append_left {Symbol Measure : Type}
@@ -937,7 +954,23 @@ theorem not_index_aligned_preorder :
   have uniqInc : uniqueSymbols [gate, commit] := by
     unfold uniqueSymbols
     simp [List.map, List.nodup_cons, List.mem_singleton]
-  refine ⟨⟨uniqSwap, uniqInc, ?_⟩, ?_⟩
+  have fitsSwap : profilesAligned space [commit, gate] := by
+    intro p hp
+    cases hp with
+    | head => rfl
+    | tail _ hp =>
+      cases hp with
+      | head => rfl
+      | tail _ hr => cases hr
+  have fitsInc : profilesAligned space [gate, commit] := by
+    intro p hp
+    cases hp with
+    | head => rfl
+    | tail _ hp =>
+      cases hp with
+      | head => rfl
+      | tail _ hr => cases hr
+  refine ⟨⟨uniqSwap, uniqInc, fitsSwap, fitsInc, ?_⟩, ?_⟩
   · intro q hq
     cases hq with
     | head _ =>
@@ -998,6 +1031,26 @@ theorem repeated_profile_not_releaseLe :
     have hdup := h.2.1
     unfold uniqueSymbols at hdup
     simp [List.map, List.nodup_cons, List.mem_singleton] at hdup
+
+/-- A symbol the candidate adds is not compared with an incumbent, and
+    a short reading vector on that symbol still fails `releaseLe`. The
+    kept symbol is no worse than the incumbent. -/
+theorem misaligned_addition_not_releaseLe :
+    let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+    let kept : Profile Bool Unit :=
+      { symbol := false, readings := [0], observed := true }
+    let extra : Profile Bool Unit :=
+      { symbol := true, readings := [], observed := true }
+    (∃ r ∈ [kept, extra], noWorse space r kept) ∧
+      ¬ releaseLe space [kept, extra] [kept] := by
+  let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+  let kept : Profile Bool Unit :=
+    { symbol := false, readings := [0], observed := true }
+  let extra : Profile Bool Unit :=
+    { symbol := true, readings := [], observed := true }
+  refine ⟨⟨kept, List.mem_cons_self, noWorse_refl rfl⟩, ?_⟩
+  intro h
+  exact absurd (h.2.2.1 extra (List.mem_cons_of_mem _ List.mem_cons_self)) (by decide)
 
 /-- Aligned profiles from `candidates` that no member of `candidates`
     dominates. A profile whose readings do not cover the space is not
@@ -1071,6 +1124,7 @@ theorem misaligned_not_on_frontier :
 #print axioms not_index_aligned_preorder
 #print axioms duplicate_candidate_not_releaseLe
 #print axioms repeated_profile_not_releaseLe
+#print axioms misaligned_addition_not_releaseLe
 #print axioms not_axesLt_of_short_vector
 #print axioms frontier_exact
 #print axioms misaligned_not_on_frontier
