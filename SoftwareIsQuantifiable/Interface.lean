@@ -817,11 +817,12 @@ theorem not_dominates_append_splits :
     components at one measurement, not a sequence of releases. -/
 abbrev Release (Symbol Measure : Type) := List (Profile Symbol Measure)
 
-/-- Each symbol occurs at most once. A second profile for the same
-    symbol is a different claim, not a second witness for the first. -/
+/-- Each symbol occurs at most once, counting repeated copies of one
+    profile. Membership sees only values, so `p ∈ [p, p]` cannot tell
+    the two occurrences apart. -/
 def uniqueSymbols {Symbol Measure : Type}
     (R : Release Symbol Measure) : Prop :=
-  ∀ p ∈ R, ∀ q ∈ R, p.symbol = q.symbol → p = q
+  (R.map Profile.symbol).Nodup
 
 /-- The two assemblies name no symbol in common. -/
 def symbolsDisjoint {Symbol Measure : Type}
@@ -832,16 +833,13 @@ theorem uniqueSymbols_append {Symbol Measure : Type}
     {left right : Release Symbol Measure}
     (hL : uniqueSymbols left) (hR : uniqueSymbols right)
     (hd : symbolsDisjoint left right) : uniqueSymbols (left ++ right) := by
-  intro p hp q hq hsym
-  cases List.mem_append.mp hp with
-  | inl hpl =>
-    cases List.mem_append.mp hq with
-    | inl hql => exact hL p hpl q hql hsym
-    | inr hqr => exact absurd hsym (hd p hpl q hqr)
-  | inr hpr =>
-    cases List.mem_append.mp hq with
-    | inl hql => exact absurd hsym.symm (hd q hql p hpr)
-    | inr hqr => exact hR p hpr q hqr hsym
+  unfold uniqueSymbols List.Nodup at *
+  rw [List.map_append, List.pairwise_append]
+  refine ⟨hL, hR, ?_⟩
+  intro s hs t ht
+  rcases List.mem_map.mp hs with ⟨p, hp, rfl⟩
+  rcases List.mem_map.mp ht with ⟨q, hq, rfl⟩
+  exact hd p hp q hq
 
 /-- Every incumbent symbol still has a `noWorse` profile in the
     candidate, and each release names each symbol at most once. A
@@ -934,45 +932,11 @@ theorem not_index_aligned_preorder :
     { symbol := true, readings := [9], observed := true }
   let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
   have uniqSwap : uniqueSymbols [commit, gate] := by
-    intro p hp q hq hsym
-    cases hp with
-    | head =>
-      cases hq with
-      | head => rfl
-      | tail _ hq =>
-        cases hq with
-        | head => cases hsym
-        | tail _ hr => cases hr
-    | tail _ hp =>
-      cases hp with
-      | head =>
-        cases hq with
-        | head => cases hsym
-        | tail _ hq =>
-          cases hq with
-          | head => rfl
-          | tail _ hr => cases hr
-      | tail _ hr => cases hr
+    unfold uniqueSymbols
+    simp [List.map, List.nodup_cons, List.mem_singleton]
   have uniqInc : uniqueSymbols [gate, commit] := by
-    intro p hp q hq hsym
-    cases hp with
-    | head =>
-      cases hq with
-      | head => rfl
-      | tail _ hq =>
-        cases hq with
-        | head => cases hsym
-        | tail _ hr => cases hr
-    | tail _ hp =>
-      cases hp with
-      | head =>
-        cases hq with
-        | head => cases hsym
-        | tail _ hq =>
-          cases hq with
-          | head => rfl
-          | tail _ hr => cases hr
-      | tail _ hr => cases hr
+    unfold uniqueSymbols
+    simp [List.map, List.nodup_cons, List.mem_singleton]
   refine ⟨⟨uniqSwap, uniqInc, ?_⟩, ?_⟩
   · intro q hq
     cases hq with
@@ -1008,11 +972,32 @@ theorem duplicate_candidate_not_releaseLe :
     { symbol := true, readings := [1], observed := true }
   refine ⟨⟨good, List.mem_cons_self, ⟨⟨rfl, ⟨Nat.zero_le _, trivial⟩⟩, fun _ => rfl⟩⟩, ?_⟩
   intro h
-  have heq : good = regressing :=
-    h.1 good List.mem_cons_self regressing
-      (List.mem_cons_of_mem _ List.mem_cons_self) rfl
-  have hread : good.readings = regressing.readings := congrArg Profile.readings heq
-  cases hread
+  have hdup := h.1
+  unfold uniqueSymbols at hdup
+  simp [List.map, List.nodup_cons, List.mem_singleton] at hdup
+
+/-- Listing one profile twice names its symbol twice. The copy would
+    satisfy the incumbent, and `releaseLe` still refuses both the
+    duplicated candidate and the duplicated incumbent. -/
+theorem repeated_profile_not_releaseLe :
+    let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+    let p : Profile Bool Unit :=
+      { symbol := true, readings := [0], observed := true }
+    (∃ r ∈ [p, p], noWorse space r p) ∧
+      ¬ releaseLe space [p, p] [p] ∧
+      ¬ releaseLe space [p] [p, p] := by
+  let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+  let p : Profile Bool Unit :=
+    { symbol := true, readings := [0], observed := true }
+  refine ⟨⟨p, List.mem_cons_self, noWorse_refl rfl⟩, ?_, ?_⟩
+  · intro h
+    have hdup := h.1
+    unfold uniqueSymbols at hdup
+    simp [List.map, List.nodup_cons, List.mem_singleton] at hdup
+  · intro h
+    have hdup := h.2.1
+    unfold uniqueSymbols at hdup
+    simp [List.map, List.nodup_cons, List.mem_singleton] at hdup
 
 /-- Aligned profiles from `candidates` that no member of `candidates`
     dominates. A profile whose readings do not cover the space is not
@@ -1085,6 +1070,7 @@ theorem misaligned_not_on_frontier :
 #print axioms releaseLe_append
 #print axioms not_index_aligned_preorder
 #print axioms duplicate_candidate_not_releaseLe
+#print axioms repeated_profile_not_releaseLe
 #print axioms not_axesLt_of_short_vector
 #print axioms frontier_exact
 #print axioms misaligned_not_on_frontier
