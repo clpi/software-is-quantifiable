@@ -80,5 +80,64 @@ theorem coverage_iff (P : PlatformPremise) :
     exact Classical.byContradiction
       (fun hne => h ⟨e, fun w hw => hne ⟨w, hw⟩⟩)
 
+/-- Bare existence of a `Witness` whose `exec` field equals an
+    execution id. This is a theorem, and it is not a discharge of
+    §19: `Witness` is an unconstrained pair of naturals, so the pair
+    can be built with no sensor and no ledger. `coverage` still takes
+    `PlatformPremise`. Ledger membership below is the claim that
+    stays a premise. -/
+theorem unconstrained_witness_exists (e : Execution) :
+    ∃ w : Witness, Witnessed e w :=
+  ⟨{ exec := e.id, events := 0 }, rfl⟩
+
+/-- A named ledger: the witnesses a platform actually recorded. -/
+structure Ledger where
+  records : List Witness
+
+def ledgerWitnessed (L : Ledger) (e : Execution) : Prop :=
+  ∃ w ∈ L.records, Witnessed e w
+
+/-- Ledger coverage of every execution. This is the mediation claim
+    with a bite: membership in a supplied ledger, not existence of a
+    pair of naturals. It is assumed, never proved. -/
+def LedgerPremise (L : Ledger) : Prop :=
+  ∀ e : Execution, ledgerWitnessed L e
+
+/-- An empty ledger covers nothing. Universality is not a theorem. -/
+theorem not_ledger_coverage_empty :
+    ¬ ledgerWitnessed { records := [] } { id := 0 } := by
+  intro h
+  rcases h with ⟨_, hw, _⟩
+  cases hw
+
+/-- Sensor-below and append-only do not yield ledger coverage.
+    Both flags can hold (`True`) while the ledger misses an execution. -/
+theorem not_ledger_from_placement :
+    ¬ ∀ (sensorBelow ledgerAppendOnly : Prop) (L : Ledger),
+        sensorBelow → ledgerAppendOnly → LedgerPremise L := by
+  intro h
+  exact not_ledger_coverage_empty
+    ((h True True { records := [] } trivial trivial) { id := 0 })
+
+def appendLedger (L1 L2 : Ledger) : Ledger where
+  records := L1.records ++ L2.records
+
+/-- **Composition of named coverage.** If each component's ledger
+    covers that component's named executions, the appended ledger
+    covers the concatenated execution list. This does not produce
+    `LedgerPremise` for every `Execution`; that remains a premise. -/
+theorem ledger_coverage_compose {E1 E2 : List Execution} {L1 L2 : Ledger}
+    (h1 : ∀ e ∈ E1, ledgerWitnessed L1 e)
+    (h2 : ∀ e ∈ E2, ledgerWitnessed L2 e) :
+    ∀ e ∈ E1 ++ E2, ledgerWitnessed (appendLedger L1 L2) e := by
+  intro e he
+  cases List.mem_append.mp he with
+  | inl hl =>
+    rcases h1 e hl with ⟨w, hw, hww⟩
+    exact ⟨w, List.mem_append_left _ hw, hww⟩
+  | inr hr =>
+    rcases h2 e hr with ⟨w, hw, hww⟩
+    exact ⟨w, List.mem_append_right _ hw, hww⟩
+
 end Coverage
 end SoftwareIsQuantifiable

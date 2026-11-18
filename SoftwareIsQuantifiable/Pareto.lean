@@ -1,3 +1,5 @@
+import SoftwareIsQuantifiable.Interface
+
 /-
   Claim 4 — Pareto ordering (spec §20.1, §20.2, §20.4, §21.3).
 
@@ -219,6 +221,263 @@ theorem not_per_execution_dominance :
   intro h
   have := h (1, 0) (3, 0) (by simp) (by simp)
   simp at this
+
+/-- Sum of two consistent interval bounds. -/
+def addBounds (a b : Bounds) : Bounds where
+  lo := a.lo + b.lo
+  hi := a.hi + b.hi
+  valid := Nat.add_le_add a.valid b.valid
+
+/-- Pointwise maximum of two consistent interval bounds. -/
+def maxBounds (a b : Bounds) : Bounds where
+  lo := max a.lo b.lo
+  hi := max a.hi b.hi
+  valid := Nat.max_le.mpr
+    ⟨Nat.le_trans a.valid (Nat.le_max_left _ _),
+     Nat.le_trans b.valid (Nat.le_max_right _ _)⟩
+
+theorem max_le_max {a b c d : Nat} (h1 : a ≤ c) (h2 : b ≤ d) :
+    max a b ≤ max c d :=
+  Nat.max_le.mpr ⟨Nat.le_trans h1 (Nat.le_max_left _ _),
+    Nat.le_trans h2 (Nat.le_max_right _ _)⟩
+
+theorem max_lt_max {a b c d : Nat} (h1 : a < c) (h2 : b < d) :
+    max a b < max c d := by
+  by_cases h : a ≤ b
+  · rw [Nat.max_def]
+    simp [h]
+    exact Nat.lt_of_lt_of_le h2 (Nat.le_max_right c d)
+  · rw [Nat.max_def]
+    simp [h]
+    exact Nat.lt_of_lt_of_le h1 (Nat.le_max_left c d)
+
+/-- **Sequential composition preserves separation.** Summing both axes
+    of two separated pairs (one component after another) stays separated. -/
+theorem separated_sum
+    {ct cc it ic ct2 cc2 it2 ic2 : Bounds}
+    (h1 : separated ct cc it ic) (h2 : separated ct2 cc2 it2 ic2) :
+    separated (addBounds ct ct2) (addBounds cc cc2)
+      (addBounds it it2) (addBounds ic ic2) := by
+  obtain ⟨t1, c1, s1⟩ := h1
+  obtain ⟨t2, c2, _⟩ := h2
+  refine ⟨?_, ?_, ?_⟩
+  · show ct.hi + ct2.hi ≤ it.lo + it2.lo
+    exact Nat.add_le_add t1 t2
+  · show cc.hi + cc2.hi ≤ ic.lo + ic2.lo
+    exact Nat.add_le_add c1 c2
+  · rcases s1 with st | sc
+    · exact Or.inl (by
+        show ct.hi + ct2.hi < it.lo + it2.lo
+        exact Nat.add_lt_add_of_lt_of_le st t2)
+    · exact Or.inr (by
+        show cc.hi + cc2.hi < ic.lo + ic2.lo
+        exact Nat.add_lt_add_of_lt_of_le sc c2)
+
+/-- **Parallel makespan preserves separation.** Time is the max of the
+    component time bounds (they overlap); compute still sums. Strictness
+    survives: if both time gaps are strict the max is strict, and if
+    either compute gap is strict the sum is strict. A component that is
+    separated must be strict on at least one axis, so one of those
+    cases always applies. -/
+theorem separated_parallel
+    {ct cc it ic ct2 cc2 it2 ic2 : Bounds}
+    (h1 : separated ct cc it ic) (h2 : separated ct2 cc2 it2 ic2) :
+    separated (maxBounds ct ct2) (addBounds cc cc2)
+      (maxBounds it it2) (addBounds ic ic2) := by
+  obtain ⟨t1, c1, s1⟩ := h1
+  obtain ⟨t2, c2, s2⟩ := h2
+  refine ⟨?_, ?_, ?_⟩
+  · show max ct.hi ct2.hi ≤ max it.lo it2.lo
+    exact max_le_max t1 t2
+  · show cc.hi + cc2.hi ≤ ic.lo + ic2.lo
+    exact Nat.add_le_add c1 c2
+  · rcases s1 with st1 | sc1
+    · rcases s2 with st2 | sc2
+      · exact Or.inl (by
+          show max ct.hi ct2.hi < max it.lo it2.lo
+          exact max_lt_max st1 st2)
+      · exact Or.inr (by
+          show cc.hi + cc2.hi < ic.lo + ic2.lo
+          exact Nat.add_lt_add_of_le_of_lt c1 sc2)
+    · exact Or.inr (by
+        show cc.hi + cc2.hi < ic.lo + ic2.lo
+        exact Nat.add_lt_add_of_lt_of_le sc1 c2)
+
+def weight2 (w1 w2 : Nat) (p : Point) : Nat := w1 * p.1 + w2 * p.2
+
+/-- A positive weighted sum cannot select the non-supported Pareto
+    point `(2, 2)` against `(0, 3)` and `(3, 0)`. `(2, 2)` is
+    undominated (`scalar_frontier_point`) and still not a minimizer of
+    any positive weights. -/
+theorem not_scalarized :
+    ¬ ∃ w1 w2 : Nat, 0 < w1 ∧ 0 < w2 ∧
+        weight2 w1 w2 (2, 2) ≤ weight2 w1 w2 (0, 3) ∧
+        weight2 w1 w2 (2, 2) ≤ weight2 w1 w2 (3, 0) := by
+  intro h
+  rcases h with ⟨w1, w2, hw1, hw2, hA, hC⟩
+  simp [weight2] at hA hC
+  have hA' : 2 * w1 ≤ w2 := by omega
+  have hC' : 2 * w2 ≤ w1 := by omega
+  omega
+
+theorem weighted_strict {w1 w2 a b c d : Nat}
+    (hw1 : 0 < w1) (hw2 : 0 < w2)
+    (h1 : a ≤ b) (h2 : c ≤ d) (hs : a < b ∨ c < d) :
+    w1 * a + w2 * c < w1 * b + w2 * d := by
+  rcases hs with hs | hs
+  · exact Nat.add_lt_add_of_lt_of_le
+      (Nat.mul_lt_mul_of_pos_left hs hw1) (Nat.mul_le_mul_left w2 h2)
+  · exact Nat.add_lt_add_of_le_of_lt
+      (Nat.mul_le_mul_left w1 h1) (Nat.mul_lt_mul_of_pos_left hs hw2)
+
+/-- A positive-weight scalar minimum is undominated. The converse is
+    false: `not_scalarized`. -/
+theorem scalar_optimum_undominated {w1 w2 : Nat} {L : List Point} {y : Point}
+    (hw1 : 0 < w1) (hw2 : 0 < w2) (_hy : y ∈ L)
+    (hopt : ∀ z ∈ L, weight2 w1 w2 y ≤ weight2 w1 w2 z) :
+    ∀ z ∈ L, ¬ dominates z y := by
+  intro z hz hdom
+  obtain ⟨h1, h2, h3⟩ := hdom
+  have hlt := weighted_strict hw1 hw2 h1 h2 h3
+  exact Nat.lt_irrefl _ (Nat.lt_of_le_of_lt (hopt z hz) hlt)
+
+def dominatesB (a b : Point) : Bool :=
+  decide (a.1 ≤ b.1) && decide (a.2 ≤ b.2) &&
+    (decide (a.1 < b.1) || decide (a.2 < b.2))
+
+theorem dominatesB_iff (a b : Point) :
+    dominatesB a b = true ↔ dominates a b := by
+  simp only [dominatesB, dominates, Bool.and_eq_true_iff, Bool.or_eq_true_iff,
+    decide_eq_true_iff]
+  constructor
+  · intro h
+    exact ⟨h.1.1, h.1.2, h.2⟩
+  · intro h
+    exact ⟨⟨h.1, h.2.1⟩, h.2.2⟩
+
+instance (a b : Point) : Decidable (dominates a b) :=
+  if h : dominatesB a b then
+    isTrue ((dominatesB_iff a b).mp h)
+  else
+    isFalse (fun h' => h ((dominatesB_iff a b).mpr h'))
+
+/-- The Pareto frontier of a finite candidate list: those no candidate dominates. -/
+def frontier (L : List Point) : List Point :=
+  L.filter (fun x => !(L.any (fun z => dominatesB z x)))
+
+theorem frontier_exact {L : List Point} {x : Point} :
+    x ∈ frontier L ↔ x ∈ L ∧ ∀ z ∈ L, ¬ dominates z x := by
+  constructor
+  · intro h
+    have hmem := List.mem_filter.mp h
+    refine ⟨hmem.1, ?_⟩
+    intro z hz hdom
+    have hany : L.any (fun y => dominatesB y x) = true :=
+      List.any_eq_true.mpr ⟨z, hz, (dominatesB_iff z x).mpr hdom⟩
+    have hnot := hmem.2
+    rw [hany] at hnot
+    cases hnot
+  · intro h
+    apply List.mem_filter.mpr
+    refine ⟨h.1, ?_⟩
+    cases hb : L.any (fun z => dominatesB z x) with
+    | false => rfl
+    | true =>
+      rcases List.any_eq_true.mp hb with ⟨z, hz, hd⟩
+      exact absurd ((dominatesB_iff z x).mp hd) (h.2 z hz)
+
+theorem frontier_antichain {L : List Point} {x y : Point}
+    (hx : x ∈ frontier L) (hy : y ∈ frontier L) : ¬ dominates x y :=
+  (frontier_exact.mp hy).2 x (frontier_exact.mp hx).1
+
+/-- `(2, 2)` is on the frontier of `{(0,3),(2,2),(3,0)}` and is still
+    not a positive scalar minimum (`not_scalarized`). -/
+theorem scalar_frontier_point :
+    (2, 2) ∈ frontier [(0, 3), (2, 2), (3, 0)] := by
+  decide
+
+def minkowski (A B : List Point) : List Point :=
+  A.flatMap (fun a => B.map (fun b => (a.1 + b.1, a.2 + b.2)))
+
+theorem dominates_add_left {a a' b : Point} (h : dominates a' a) :
+    dominates (a'.1 + b.1, a'.2 + b.2) (a.1 + b.1, a.2 + b.2) := by
+  obtain ⟨h1, h2, h3⟩ := h
+  refine ⟨by omega, by omega, ?_⟩
+  rcases h3 with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr (by omega)
+
+theorem dominates_add_right {a b b' : Point} (h : dominates b' b) :
+    dominates (a.1 + b'.1, a.2 + b'.2) (a.1 + b.1, a.2 + b.2) := by
+  obtain ⟨h1, h2, h3⟩ := h
+  refine ⟨by omega, by omega, ?_⟩
+  rcases h3 with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr (by omega)
+
+/-- An undominated sum is a sum of undominated points. Dominated
+    summands cannot appear on the frontier of the Minkowski sum. -/
+theorem minkowski_frontier_subset {A B : List Point} {a b : Point}
+    (ha : a ∈ A) (hb : b ∈ B)
+    (hund : ∀ z ∈ minkowski A B, ¬ dominates z (a.1 + b.1, a.2 + b.2)) :
+    (∀ a' ∈ A, ¬ dominates a' a) ∧ (∀ b' ∈ B, ¬ dominates b' b) := by
+  constructor
+  · intro a' ha' hdom
+    apply hund (a'.1 + b.1, a'.2 + b.2)
+    · exact List.mem_flatMap.mpr ⟨a', ha', List.mem_map.mpr ⟨b, hb, rfl⟩⟩
+    · exact dominates_add_left hdom
+  · intro b' hb' hdom
+    apply hund (a.1 + b'.1, a.2 + b'.2)
+    · exact List.mem_flatMap.mpr ⟨a, ha, List.mem_map.mpr ⟨b', hb', rfl⟩⟩
+    · exact dominates_add_right hdom
+
+/-- The converse fails. `(0,3)+(3,0) = (3,3)` sums two frontier points
+    and is dominated by `(2,0)+(0,2) = (2,2)`, which is also a sum of
+    frontier points. -/
+theorem not_frontier_minkowski :
+    (∀ a' ∈ ([(0, 3), (2, 0)] : List Point), ¬ dominates a' (0, 3)) ∧
+    (∀ b' ∈ ([(0, 2), (3, 0)] : List Point), ¬ dominates b' (3, 0)) ∧
+    ∃ z ∈ minkowski [(0, 3), (2, 0)] [(0, 2), (3, 0)], dominates z (3, 3) := by
+  decide
+
+/-- The two-axis order of this module is the `Interface` profile order
+    on a time/compute measure space, both axes `minimize`, observed
+    behavior held. -/
+inductive CostAxis where
+  | time
+  | compute
+  deriving DecidableEq, Repr
+
+def costSpace : Interface.MeasureSpace CostAxis :=
+  [{ measure := .time, polarity := .minimize },
+   { measure := .compute, polarity := .minimize }]
+
+def profileOf (x : Point) : Interface.Profile Unit CostAxis where
+  symbol := ()
+  readings := [x.1, x.2]
+  observed := true
+
+theorem dominates_iff_interface (x y : Point) :
+    dominates x y ↔
+      Interface.dominates costSpace (profileOf x) (profileOf y) := by
+  constructor
+  · intro h
+    obtain ⟨h1, h2, h3⟩ := h
+    refine ⟨⟨⟨rfl, ?_⟩, fun _ => rfl⟩, ?_⟩
+    · exact ⟨h1, ⟨h2, trivial⟩⟩
+    · rcases h3 with h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h)
+  · intro h
+    obtain ⟨⟨⟨_, haxes⟩, _⟩, hlt⟩ := h
+    obtain ⟨h1, hrest⟩ := haxes
+    obtain ⟨h2, _⟩ := hrest
+    refine ⟨h1, h2, ?_⟩
+    rcases hlt with h | h
+    · exact Or.inl h
+    · rcases h with h | h
+      · exact Or.inr h
+      · cases h
 
 end Pareto
 end SoftwareIsQuantifiable

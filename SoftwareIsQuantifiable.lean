@@ -1,5 +1,7 @@
+import SoftwareIsQuantifiable.Interface
 import SoftwareIsQuantifiable.Finiteness
 import SoftwareIsQuantifiable.Fold
 import SoftwareIsQuantifiable.Coloring
 import SoftwareIsQuantifiable.Pareto
 import SoftwareIsQuantifiable.Coverage
+import SoftwareIsQuantifiable.Instance
