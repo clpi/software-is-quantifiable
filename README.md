@@ -61,7 +61,27 @@ and 4.19.0. See [reproduction and evidence](verification/pareto-repair.md).
 | 3 | Coloring: relative to a named snapshot, the coloring computed as a least fixed point over ground Horn rules is sound and complete, and the iteration terminates (§5, §16.8, §20) | `Coloring.exists_fixed_point` (a fixed point is reached within `U.length` steps), `Coloring.coloring_fixed`, `Coloring.coloring_sound`, `Coloring.coloring_complete` | PROVEN, under one stated side condition: the snapshot's universe names every conclusion the rules can produce — that is what makes the snapshot a snapshot |
 | 4 | Pareto selection and no-regression admission | `Pareto.frontier_nonempty` preserves the unrestricted trade-off frontier; `Pareto.frontier_can_regress` shows that frontier membership alone permits incomparable regressions. `Pareto.admitted_frontier_exists` and `Pareto.admitted_frontier_sound` add incumbent-guarded selection: no worse on either existing axis and nondominated among the original candidates. `Pareto.acceptsRelease_iff` checks identical measurement context, qualified-behavior inclusion, and componentwise non-regression. | PROVEN at model level, under the stated scope and baseline-retention premises; measurements and behavior certificates remain scoped inputs |
 | 4′ | Overlapping intervals alone guarantee per-execution dominance | `Pareto.not_per_execution_dominance`: bounds [1, 100] against [2, 3] permit realizations 1 against 3 | DISPROVEN for overlapping intervals. This does not refute `separated_sound`, which proves dominance for every pair of in-bound realizations when its separation premise holds |
-| 5 | Coverage universality: every execution crosses the kernel boundary, hence is witnessed (§19) | `Coverage.coverage`, conditional on `Coverage.PlatformPremise` | PREMISE — assumed, named, never counted as proven. The spec states this as a protection-model argument on three named assumptions (§19.4) with an exact falsification condition (§19.5, `Coverage.coverage_iff`). The mathematics adds nothing here and this repository says so: every coverage theorem takes the premise as an argument, so it cannot be smuggled in as a theorem |
+| 5 | Coverage of real executions (§19) | `Coverage.coverage`, `Coverage.unrestricted_witness`, `Coverage.recorded_exact`, `Coverage.missing_exact` | PREMISE for physical mediation. The legacy ID predicate has a constructed witness for every execution. The ledger checker proves exactly which named executions have an accepted record. |
+
+## Coverage against an actual ledger
+
+`Coverage.unrestricted_witness` proves that a record containing the execution's
+ID and zero events witnesses every execution under the original ID-equality
+predicate. This construction reads no ledger. The protection-model premise
+therefore supplies no evidence that any particular collector observed a run.
+
+Use `Coverage.recorded valid ledger e` for a live ledger and
+`Coverage.missing valid ledger roster` for a finite, independently supplied
+roster. `recorded_exact` extracts a matching record present in the ledger
+that passed the supplied validator. `missing_exact` identifies each uncovered
+execution. `missing_append` proves that the executions missing from two
+combined ledgers are exactly those missing from both. With an empty ledger the
+entire roster is missing. Authenticity, unique execution IDs, completeness of
+the roster, and whether the validator enforces the intended policy are
+deployment obligations.
+
+The five modules and root have also been compiled from the same sources with
+Lean 4.15.0 and 4.19.0. The package remains pinned to 4.15.0.
 
 ## Reading the modules
 

@@ -1,16 +1,9 @@
 /-
   Claim 5 — Coverage universality (spec §19).
 
-  Status: PREMISE. The spec itself states this claim as an argument
-  at the level of the protection model, standing on three named
-  assumptions (§19.4), with an exact falsification condition (§19.5).
-  It is not a theorem of the mathematics, and this module does not
-  pretend otherwise: the mediation premise appears as an explicitly
-  named field of `PlatformPremise`, every coverage statement takes
-  that premise as an argument, and no theorem in this repository
-  derives coverage without it. The Lean content is the dependency
-  discipline itself — the premise cannot be smuggled, because the
-  type of every coverage theorem names it.
+  Coverage of real executions is a platform premise. The legacy Witnessed
+  predicate tests only an ID. The recorded and missing functions below
+  require membership in an actual ledger and a supplied validator.
 -/
 
 namespace SoftwareIsQuantifiable
@@ -63,10 +56,7 @@ theorem coverage (P : PlatformPremise) :
     ∀ e : Execution, ∃ w : Witness, Witnessed e w :=
   P.mediated
 
-/-- The falsification condition (§19.5), stated exactly: coverage
-    fails if and only if some execution is unwitnessed. Exhibiting
-    one such execution on a named platform falsifies the premise
-    for that platform — and, per the spec, nothing else. -/
+/-- Logical dual of unrestricted existence under the legacy predicate. -/
 theorem coverage_iff (P : PlatformPremise) :
     (∀ e : Execution, ∃ w : Witness, Witnessed e w) ↔
     ¬ ∃ e : Execution, ∀ w : Witness, ¬ Witnessed e w := by
@@ -79,6 +69,53 @@ theorem coverage_iff (P : PlatformPremise) :
   · intro h e
     exact Classical.byContradiction
       (fun hne => h ⟨e, fun w hw => hne ⟨w, hw⟩⟩)
+
+/-- Constructing a matching record requires only the execution ID. -/
+theorem unrestricted_witness (e : Execution) : ∃ w, Witnessed e w :=
+  ⟨⟨e.id, 0⟩, rfl⟩
+
+/-- Each result refers to a record actually present in this ledger. The caller
+    supplies the evidence validator and the independently specified roster. -/
+def recorded (valid : Witness → Bool) (ledger : List Witness) (e : Execution) : Bool :=
+  ledger.any (fun w => valid w && decide (w.exec = e.id))
+
+theorem recorded_exact (valid : Witness → Bool) (ledger : List Witness) (e : Execution) :
+    recorded valid ledger e = true ↔ ∃ w ∈ ledger, valid w = true ∧ Witnessed e w := by
+  simp [recorded, Witnessed, List.any_eq_true]
+
+def missing (valid : Witness → Bool) (ledger : List Witness) (roster : List Execution) :=
+  roster.filter (fun e => !recorded valid ledger e)
+
+theorem missing_exact (valid : Witness → Bool) (ledger : List Witness)
+    (roster : List Execution) (e : Execution) :
+    e ∈ missing valid ledger roster ↔
+      e ∈ roster ∧ ¬ ∃ w ∈ ledger, valid w = true ∧ Witnessed e w := by
+  simp [missing, List.mem_filter, ← recorded_exact]
+
+theorem recorded_append (valid : Witness → Bool) (left right : List Witness) (e : Execution) :
+    recorded valid (left ++ right) e = (recorded valid left e || recorded valid right e) := by
+  simp [recorded]
+
+theorem missing_append (valid : Witness → Bool) (left right : List Witness)
+    (roster : List Execution) (e : Execution) :
+    e ∈ missing valid (left ++ right) roster ↔
+      e ∈ missing valid left roster ∧ e ∈ missing valid right roster := by
+  simp only [missing, List.mem_filter, Bool.not_eq_true', recorded_append,
+    Bool.or_eq_false_iff]
+  exact ⟨fun ⟨hr, hl, hd⟩ => ⟨⟨hr, hl⟩, hr, hd⟩,
+    fun ⟨⟨hr, hl⟩, _, hd⟩ => ⟨hr, hl, hd⟩⟩
+
+/-- An empty ledger leaves every named execution uncovered, even though
+    unrestricted_witness holds for each one. -/
+theorem missing_empty (valid : Witness → Bool) (roster : List Execution) :
+    missing valid [] roster = roster := by simp [missing, recorded]
+
+#guard !recorded (fun w => decide (w.events > 0)) [⟨3, 0⟩, ⟨4, 1⟩] ⟨3⟩
+#guard recorded (fun w => decide (w.events > 0)) [⟨3, 1⟩] ⟨3⟩
+
+#print axioms recorded_exact
+#print axioms missing_exact
+#print axioms missing_append
 
 end Coverage
 end SoftwareIsQuantifiable

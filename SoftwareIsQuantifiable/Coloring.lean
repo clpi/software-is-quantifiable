@@ -60,7 +60,7 @@ theorem holds_eq_true {s : State F} {l : List F} :
       | head _ => exact ha
       | tail _ hpm => exact IH.mp hl p hpm
     · intro h
-      have ha : s a = true := h a (List.mem_cons_self _ _)
+      have ha : s a = true := h a (List.Mem.head _)
       have hl : holds s l = true :=
         IH.mpr (fun p hp => h p (List.mem_cons_of_mem _ hp))
       show (s a && holds s l) = true
@@ -83,7 +83,7 @@ theorem any_eq_true {β : Type} {l : List β} {p : β → Bool} :
     · intro h
       have h' : (p a || l.any p) = true := h
       cases hb : p a with
-      | true => exact ⟨a, List.mem_cons_self _ _, hb⟩
+      | true => exact ⟨a, List.Mem.head _, hb⟩
       | false =>
         have h2 : l.any p = true := by simpa [hb] using h'
         cases IH.mp h2 with
@@ -170,7 +170,7 @@ theorem count_le_of_le : ∀ (U : List F) {p q : State F},
       IH (fun x hx => hle x (List.mem_cons_of_mem _ hx))
     show contrib (p a) + count U p ≤ contrib (q a) + count U q
     by_cases hpa : p a = true
-    · have hqa : q a = true := hle a (List.mem_cons_self _ _) hpa
+    · have hqa : q a = true := hle a (List.Mem.head _) hpa
       rw [hpa, hqa]
       show 1 + count U p ≤ 1 + count U q
       omega
@@ -192,7 +192,7 @@ theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
   | nil =>
     intro p q _ hex
     cases hex with
-    | intro y hy => exact absurd hy.1 (List.not_mem_nil y)
+    | intro y hy => exact nomatch hy.1
   | cons a U IH =>
     intro p q hle hex
     have hle' : ∀ x ∈ U, p x = true → q x = true :=
@@ -211,7 +211,7 @@ theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
           | tail _ hym => exact ⟨y, hym, hy.2⟩
       have hlt : count U p < count U q := IH hle' hex'
       by_cases hpa : p a = true
-      · have hqa : q a = true := hle a (List.mem_cons_self _ _) hpa
+      · have hqa : q a = true := hle a (List.Mem.head _) hpa
         rw [hpa, hqa]
         show 1 + count U p < 1 + count U q
         omega
