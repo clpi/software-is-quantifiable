@@ -203,10 +203,65 @@ theorem scoped_recorded_exact (scope : Nat) (rows : List (Nat × Witness))
   · rintro ⟨w,hm,hv,he⟩
     exact ⟨w,⟨(scope,w),⟨hm,rfl⟩,rfl⟩,hv,he⟩
 
+/-- Audit a mixed-scope roster without erasing its scope coordinates. Each
+    entry uses the existing ledger checker after scope projection. The supplied
+    validator may enforce different witness policies in different scopes. -/
+def scopedMissing (valid : Nat → Witness → Bool) (rows : List (Nat × Witness))
+    (roster : List (Nat × Execution)) : List (Nat × Execution) :=
+  roster.filter (fun entry =>
+    !recorded (valid entry.1) (inScope entry.1 rows) entry.2)
+
+theorem scoped_missing_exact (valid : Nat → Witness → Bool)
+    (rows : List (Nat × Witness)) (roster : List (Nat × Execution))
+    (scope : Nat) (e : Execution) :
+    (scope, e) ∈ scopedMissing valid rows roster ↔
+      (scope, e) ∈ roster ∧
+        ¬ ∃ w, (scope, w) ∈ rows ∧ valid scope w = true ∧ Witnessed e w := by
+  simp [scopedMissing, List.mem_filter, ← scoped_recorded_exact]
+
+theorem scoped_coverage_missing_iff (valid : Nat → Witness → Bool)
+    (rows : List (Nat × Witness)) (roster : List (Nat × Execution)) :
+    (∀ entry ∈ roster,
+      recorded (valid entry.1) (inScope entry.1 rows) entry.2 = true) ↔
+      scopedMissing valid rows roster = [] := by
+  simp [scopedMissing, List.filter_eq_nil_iff]
+
+/-- Completeness for independently named scope-and-handle pairs. Neither
+    physical occurrence uniqueness nor authentication follows from this
+    manifest premise or from caller-supplied scope labels. -/
+theorem scoped_audit_complete (occurred : Nat × Execution → Prop)
+    (valid : Nat → Witness → Bool) (rows : List (Nat × Witness))
+    (roster : List (Nat × Execution))
+    (manifest : ∀ entry, occurred entry ↔ entry ∈ roster) :
+    scopedMissing valid rows roster = [] ↔
+      ∀ entry, occurred entry →
+        recorded (valid entry.1) (inScope entry.1 rows) entry.2 = true := by
+  rw [← scoped_coverage_missing_iff]
+  simp only [manifest]
+
+/-- The existing platform premise specialized to one scope projection. There
+    is no second platform authority: the fields and assumptions are exactly
+    those of PlatformPremise on the projected ledger. -/
+abbrev ScopedPlatformPremise (scope : Nat) (valid : Nat → Witness → Bool)
+    (rows : List (Nat × Witness)) (roster : List Execution) :=
+  PlatformPremise (valid scope) (inScope scope rows) roster
+
+theorem scoped_platform_coverage {scope : Nat} {valid : Nat → Witness → Bool}
+    {rows : List (Nat × Witness)} {roster : List Execution}
+    (P : ScopedPlatformPremise scope valid rows roster) :
+    ∀ e ∈ roster, ∃ w,
+      (scope, w) ∈ rows ∧ valid scope w = true ∧ Witnessed e w := by
+  intro e he
+  exact (scoped_recorded_exact scope rows (valid scope) e).mp (coverage P e he)
+
 #guard !recorded (fun _ => true) (inScope 1 [(2,⟨7,1⟩)]) ⟨7⟩
 #guard recorded (fun _ => true) (inScope 2 [(2,⟨7,1⟩)]) ⟨7⟩
 
 #print axioms audit_complete
 #print axioms scoped_recorded_exact
+#print axioms scoped_missing_exact
+#print axioms scoped_coverage_missing_iff
+#print axioms scoped_audit_complete
+#print axioms scoped_platform_coverage
 end Coverage
 end SoftwareIsQuantifiable

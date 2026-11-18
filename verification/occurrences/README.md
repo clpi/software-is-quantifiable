@@ -7,10 +7,17 @@ profile interface, alignment rules, behavior gate, and both worked examples.
 The source changes prove:
 
 - `Finiteness.orderings_exact`: exact multiplicities and allowed venues.
+- `Finiteness.orderings_reference_exact`: exact domain agreement with the
+  former Cartesian filter, preserving schedule values rather than list order
+  or repeated copies.
 - `Finiteness.orderings_valid`: projection to the existing coverage contract.
 - `Finiteness.combine_orderings`: tagged composition preserves multiplicities.
 - `Coverage.scoped_recorded_exact`: exact lookup under supplied scope tags.
 - `Coverage.audit_complete`: exact coverage given a complete handle manifest.
+- `Coverage.scoped_audit_complete`: the same exactness for mixed-scope
+  manifests, with scope projection and scope-specific validation at every row.
+- `Coverage.scoped_platform_coverage`: same-scope row evidence through an
+  abbreviation of the existing platform premise.
 - `Pareto.separated_iff_all`: necessary and sufficient strict separation for
   independent rectangular realization sets.
 - `Pareto.replacement_iff_all`: the existing context/behavior replacement gate
@@ -38,6 +45,25 @@ other failures do not satisfy that check. The claims cover substituted
 multiplicity, wrong scope, invalid witnesses, a missing execution hidden by
 an empty manifest, overlapping bounds, lost behavior, and an equal-cost tie
 misclassified as strict improvement.
+
+Mixed-scope coverage and duplicate branch choices have separate deliberate
+false-claim controls. The positive suite also checks the scope-specialized
+platform premise and different validator policies in different scopes.
+
+## Eliminated intermediate schedule space
+
+| Qualification | Former Cartesian list size | Constructive output size |
+|---|---:|---:|
+| Runs `[A,A,B]`, one venue | 27 | 3 |
+| Three distinct runs, two venues | 216 | 48 |
+| Twelve equal run values, one venue | 8,916,100,448,256 | 1 |
+
+The former sizes follow from `schedules_card`; the new sizes are executable
+Lean reduction controls. The enormous former list was not materialized as a
+timing experiment. `orderings_reference_exact` proves that this elimination
+preserves exactly the admitted schedule values. Distinct invocation IDs remain
+distinct choices; only duplicate equal values lose duplicate enumeration copies.
+The returned list can still be large when there are many distinct schedules.
 
 The committed `evidence/record.json` records the commands, source and log
 hashes, toolchain identity, complete theorem inventory, and observed outcomes.

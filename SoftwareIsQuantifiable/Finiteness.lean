@@ -100,8 +100,9 @@ theorem schedules_finite (q : Qualification Run Venue) :
   rw [mem_alphabet]
   exact hsteps p hp
 
-/-- A schedule is valid when it has one step per run, draws every step
-    from the presentation, and covers every named run. -/
+/-- The legacy distinct-name coverage contract: total length matches the
+    roster, every step belongs to the presentation, and every named value
+    occurs. Repeated run-value multiplicities require orderings_exact. -/
 def Valid (q : Qualification Run Venue) (s : Schedule Run Venue) : Prop :=
   s.length = q.runs.length ∧
   (∀ p ∈ s, p.1 ∈ q.runs ∧ p.2 ∈ q.venues) ∧
@@ -170,7 +171,8 @@ theorem validB_iff {q : Qualification Run Venue} {s : Schedule Run Venue} :
   · intro h
     exact ⟨⟨h.1, h.2.1⟩, h.2.2⟩
 
-/-- The valid schedules, as a computed sublist of the finite enumerator. -/
+/-- The schedules satisfying legacy distinct-name coverage. This preserves
+    Valid's public contract; use orderings for exact run multiplicities. -/
 def validSchedules (q : Qualification Run Venue) : List (Schedule Run Venue) :=
   (listsOfLen (alphabet q) q.runs.length).filter (fun s => validB q s)
 
@@ -349,24 +351,98 @@ theorem mem_composites {R1 V1 R2 V2 : Type}
     rcases h with ⟨s1, hs1, s2, hs2, he⟩
     exact ⟨s1, hs1, s2, hs2, he.symm⟩
 
-/-- A schedule preserving the multiplicity of every run value and assigning
-    each entry an allowed venue. Distinct invocations require distinct run
-    identities at ingress; repeated equal values carry no separate lineage. -/
+/-- Enumerate each choice value once; equal values carry no separate lineage. -/
+def choices [DecidableEq α] : List α → List α
+  | [] => []
+  | a :: rest =>
+    let tail := choices rest
+    if a ∈ tail then tail else a :: tail
+
+theorem mem_choices [DecidableEq α] {a : α} {xs : List α} :
+    a ∈ choices xs ↔ a ∈ xs := by
+  induction xs generalizing a with
+  | nil => simp [choices]
+  | cons b rest ih =>
+    simp only [choices]
+    split <;> simp_all
+
+/-- Pick a remaining run value and consume exactly one occurrence. Only
+    well-formed prefixes are constructed; no Cartesian rejection list exists. -/
+def placements [DecidableEq Run] : Nat → List Run → List Venue → List (Schedule Run Venue)
+  | 0, _, _ => [[]]
+  | n + 1, runs, venues =>
+    (choices runs).flatMap (fun r => venues.flatMap (fun v =>
+      (placements n (runs.erase r) venues).map (fun tail => (r, v) :: tail)))
+
+theorem placements_exact [DecidableEq Run] (n : Nat)
+    (runs : List Run) (venues : List Venue) (s : Schedule Run Venue)
+    (length : runs.length = n) :
+    s ∈ placements n runs venues ↔
+      (s.map Prod.fst).Perm runs ∧ ∀ p ∈ s, p.2 ∈ venues := by
+  induction n generalizing runs s with
+  | zero =>
+    have empty : runs = [] := List.length_eq_zero_iff.mp length
+    subst runs
+    cases s <;> simp [placements]
+  | succ n ih =>
+    constructor
+    · intro member
+      simp only [placements, List.mem_flatMap, List.mem_map, mem_choices] at member
+      rcases member with ⟨r, hr, v, hv, tail, ht, rfl⟩
+      have shorter : (runs.erase r).length = n := by
+        rw [List.length_erase_of_mem hr, length]
+        rfl
+      obtain ⟨perm, venue⟩ := (ih _ _ shorter).mp ht
+      refine ⟨List.cons_perm_iff_perm_erase.mpr ⟨hr, perm⟩, ?_⟩
+      intro p hp
+      rcases List.mem_cons.mp hp with he | he
+      · cases he
+        exact hv
+      · exact venue p he
+    · rintro ⟨perm, venue⟩
+      cases s with
+      | nil =>
+        have impossible := perm.length_eq
+        simp [length] at impossible
+      | cons p tail =>
+        rcases p with ⟨r, v⟩
+        obtain ⟨hr, hp⟩ := List.cons_perm_iff_perm_erase.mp perm
+        have shorter : (runs.erase r).length = n := by
+          rw [List.length_erase_of_mem hr, length]
+          rfl
+        have ht := (ih _ _ shorter).mpr
+          ⟨hp, fun p h => venue p (List.mem_cons_of_mem _ h)⟩
+        simp only [placements, List.mem_flatMap, List.mem_map, mem_choices]
+        exact ⟨r, hr, v, venue (r, v) List.mem_cons_self, tail, ht, rfl⟩
+
+/-- Construct exactly the schedules preserving run-value multiplicities.
+    Distinct invocations require distinct admitted identities at ingress.
+    This finite enumerator still materializes its potentially large output. -/
 def orderings [DecidableEq Run] [DecidableEq Venue] (q : Qualification Run Venue) :=
-  (listsOfLen (alphabet q) q.runs.length).filter
-    (fun s => decide ((s.map Prod.fst).Perm q.runs))
+  placements q.runs.length q.runs (choices q.venues)
 
 theorem orderings_exact [DecidableEq Run] [DecidableEq Venue]
     (q : Qualification Run Venue) (s : Schedule Run Venue) :
     s ∈ orderings q ↔ (s.map Prod.fst).Perm q.runs ∧ ∀ p ∈ s, p.2 ∈ q.venues := by
-  simp only [orderings, List.mem_filter, decide_eq_true_eq, mem_listsOfLen]
+  simpa only [orderings, mem_choices] using
+    placements_exact q.runs.length q.runs (choices q.venues) s rfl
+
+/-- The constructive producer has exactly the original filter's membership.
+    Enumeration order and duplicate copies are not part of this equivalence. -/
+theorem orderings_reference_exact [DecidableEq Run] [DecidableEq Venue]
+    (q : Qualification Run Venue) (s : Schedule Run Venue) :
+    s ∈ orderings q ↔ s ∈ (listsOfLen (alphabet q) q.runs.length).filter
+      (fun t => decide ((t.map Prod.fst).Perm q.runs)) := by
+  rw [orderings_exact]
+  simp only [List.mem_filter, decide_eq_true_eq, mem_listsOfLen]
   constructor
-  · rintro ⟨⟨_,h⟩,perm⟩
-    exact ⟨perm,fun p hp => (mem_alphabet.mp (h p hp)).2⟩
-  · rintro ⟨perm,venues⟩
-    refine ⟨⟨by simpa using perm.length_eq, ?_⟩,perm⟩
+  · rintro ⟨perm, venues⟩
+    refine ⟨⟨by simpa using perm.length_eq, ?_⟩, perm⟩
     intro p hp
-    exact mem_alphabet.mpr ⟨perm.mem_iff.mp (List.mem_map.mpr ⟨p,hp,rfl⟩),venues p hp⟩
+    exact mem_alphabet.mpr
+      ⟨perm.mem_iff.mp (List.mem_map.mpr ⟨p, hp, rfl⟩), venues p hp⟩
+  · rintro ⟨⟨_, members⟩, perm⟩
+    exact ⟨perm, fun p hp => (mem_alphabet.mp (members p hp)).2⟩
 
 /-- Multiplicity-preserving schedules refine the existing distinct-name
     coverage contract, so old consumers can use the stronger producer. -/
@@ -405,6 +481,7 @@ example : Valid repeated wrongMultiplicity := by
 example : wrongMultiplicity ∉ orderings repeated := by decide
 
 #print axioms orderings_exact
+#print axioms orderings_reference_exact
 #print axioms orderings_valid
 #print axioms combine_orderings
 end Finiteness
