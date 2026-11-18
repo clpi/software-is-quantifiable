@@ -53,6 +53,26 @@ requires. On a complete toolchain the same tree builds with
 | 4′ | Per-execution dominance: a dominated schedule finishes worse on every single execution | `Pareto.not_per_execution_dominance`: concrete counterexample (bounds [1, 100] against [2, 3]; the dominated schedule can realize 1 against 3) | DISPROVEN — the spec itself names this boundary at §20.4; dominance is a statement about bounds, never about one execution |
 | 5 | Coverage universality: every execution crosses the kernel boundary, hence is witnessed (§19) | `Coverage.coverage`, conditional on `Coverage.PlatformPremise` | PREMISE — assumed, named, never counted as proven. The spec states this as a protection-model argument on three named assumptions (§19.4) with an exact falsification condition (§19.5, `Coverage.coverage_iff`). The mathematics adds nothing here and this repository says so: every coverage theorem takes the premise as an argument, so it cannot be smuggled in as a theorem |
 
+## Coverage against an actual ledger
+
+`Coverage.unrestricted_witness` proves that a record containing the execution's
+ID and zero events witnesses every execution under the original ID-equality
+predicate. This construction reads no ledger. The protection-model premise
+therefore supplies no evidence that any particular collector observed a run.
+
+Use `Coverage.recorded valid ledger e` for a live ledger and
+`Coverage.missing valid ledger roster` for a finite, independently supplied
+roster. `recorded_exact` extracts a matching record present in the ledger
+that passed the supplied validator. `missing_exact` identifies each uncovered
+execution. `missing_append` proves that the executions missing from two
+combined ledgers are exactly those missing from both. With an empty ledger the
+entire roster is missing. Authenticity, unique execution IDs, completeness of
+the roster, and whether the validator enforces the intended policy are
+deployment obligations.
+
+The five modules and root have also been compiled from the same sources with
+Lean 4.15.0 and 4.19.0. The package remains pinned to 4.15.0.
+
 ## Reading the modules
 
 * `SoftwareIsQuantifiable/Finiteness.lean` — claim 1. The

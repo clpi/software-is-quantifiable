@@ -94,7 +94,7 @@ theorem account_eq_true_iff {ws : List W} {x : W} :
       have h' : (decide (x = w) || account ws x) = true := h
       by_cases hx : x = w
       · subst hx
-        exact List.mem_cons_self _ _
+        exact List.Mem.head _
       · rw [decide_false_of_not hx] at h'
         have h2 : account ws x = true := by simpa using h'
         exact List.mem_cons_of_mem w (IH.mp h2)

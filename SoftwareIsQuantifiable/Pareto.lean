@@ -143,7 +143,7 @@ theorem frontier_nonempty {L : List Point} (hL : L ≠ []) :
   | nil => exact absurd rfl hL
   | cons x xs =>
     cases exists_undominated_aux (x.1 + x.2) (x :: xs) x
-        (List.mem_cons_self _ _) (Nat.le_refl _) with
+        (List.Mem.head _) (Nat.le_refl _) with
     | intro y hy => exact ⟨y, hy.1, hy.2.2⟩
 
 /-- **No output is dominated by a named incumbent.** If the incumbent
@@ -193,7 +193,7 @@ theorem accepts_iff {B : Type} [DecidableEq B]
       | head _ => exact of_decide_eq_true ha
       | tail _ hbm => exact IH.mp hq b hbm
     · intro h
-      have ha : a ∈ candidate := h a (List.mem_cons_self _ _)
+      have ha : a ∈ candidate := h a (List.Mem.head _)
       have hq : accepts q candidate = true :=
         IH.mpr (fun b hb => h b (List.mem_cons_of_mem _ hb))
       have hdec : decide (a ∈ candidate) = true := by
