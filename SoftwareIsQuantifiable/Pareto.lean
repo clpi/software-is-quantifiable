@@ -9,9 +9,9 @@
   * The frontier is nonempty: every finite nonempty set of cost
     points has an undominated element (§20.1, §20.2 existence).
   * A frontier output is never dominated by a named incumbent from
-    the same candidate set — the regression-freedom content of the
-    acceptance discipline (§21.3): an output the incumbent dominated
-    would not be on the frontier.
+    the same candidate set. This excludes dominated outputs, but does NOT
+    exclude incomparable trade-offs. Componentwise no-regression
+    requires the separate incumbent admission guard below.
   * Refinement is monotone (§20.2): witnesses only shrink intervals,
     and a pair decided under wider bounds stays decided under
     narrower ones.
@@ -19,10 +19,9 @@
     and only if it drops no previously qualified behavior.
 
   What is DISPROVEN:
-  * The per-execution strengthening — "a dominated schedule finishes
-    worse on every single execution" — is false, by a concrete
-    counterexample (spec §20.4 names this boundary itself: dominance
-    holds at the level of bounds, not per single execution).
+  * Without separation, overlapping intervals do not establish
+    per-execution dominance. With separation, separated_sound DOES
+    establish dominance for every pair of in-bound realizations.
 -/
 
 namespace SoftwareIsQuantifiable
@@ -143,7 +142,7 @@ theorem frontier_nonempty {L : List Point} (hL : L ≠ []) :
   | nil => exact absurd rfl hL
   | cons x xs =>
     cases exists_undominated_aux (x.1 + x.2) (x :: xs) x
-        (List.mem_cons_self _ _) (Nat.le_refl _) with
+        (by simp) (Nat.le_refl _) with
     | intro y hy => exact ⟨y, hy.1, hy.2.2⟩
 
 /-- **No output is dominated by a named incumbent.** If the incumbent
@@ -152,7 +151,7 @@ theorem frontier_nonempty {L : List Point} (hL : L ≠ []) :
     ordering that the previously qualified ordering dominated is
     never the output. -/
 theorem frontier_not_dominated {L : List Point} {out inc : Point}
-    (hout : out ∈ L) (hinc : inc ∈ L)
+    (_hout : out ∈ L) (hinc : inc ∈ L)
     (hfrontier : ∀ z ∈ L, ¬ dominates z out) :
     ¬ dominates inc out :=
   hfrontier inc hinc
@@ -193,7 +192,7 @@ theorem accepts_iff {B : Type} [DecidableEq B]
       | head _ => exact of_decide_eq_true ha
       | tail _ hbm => exact IH.mp hq b hbm
     · intro h
-      have ha : a ∈ candidate := h a (List.mem_cons_self _ _)
+      have ha : a ∈ candidate := h a (by simp)
       have hq : accepts q candidate = true :=
         IH.mpr (fun b hb => h b (List.mem_cons_of_mem _ hb))
       have hdec : decide (a ∈ candidate) = true := by
@@ -204,13 +203,13 @@ theorem accepts_iff {B : Type} [DecidableEq B]
       rw [hdec, hq]
       rfl
 
-/-- **DISPROOF — per-execution dominance is false** (§20.4's own
-    named boundary). Take schedule X with witnessed time bounds
+/-- **DISPROOF — overlapping bounds alone are insufficient.**
+    Take schedule X with witnessed time bounds
     [1, 100] and schedule Y with witnessed time bounds [2, 3]
     (compute equal). The claim "every realization of Y beats every
     realization of X" is false: X can realize 1 while Y realizes 3.
-    Dominance in this design is a statement about bounds, never
-    about a single execution. -/
+    These intervals do not satisfy separation. This does not refute
+    separated_sound, which covers every in-bound realization. -/
 theorem not_per_execution_dominance :
     ¬ ∀ x y : Point,
       (1 ≤ x.1 ∧ x.1 ≤ 100 ∧ x.2 = 0) →
@@ -219,6 +218,104 @@ theorem not_per_execution_dominance :
   intro h
   have := h (1, 0) (3, 0) (by simp) (by simp)
   simp at this
+
+/-- Componentwise non-regression, distinct from non-domination.
+    Costs must refer to the same axes, workload, venue, and measurement
+    interpretation. Equality of context keys below binds that scope;
+    it does not prove the correctness of a measurement or its model. -/
+def noWorse (candidate incumbent : Point) : Prop :=
+  candidate.1 ≤ incumbent.1 ∧ candidate.2 ≤ incumbent.2
+
+instance (a b : Point) : Decidable (noWorse a b) :=
+  inferInstanceAs (Decidable (a.1 ≤ b.1 ∧ a.2 ≤ b.2))
+
+/-- Executable counterexample: a frontier may trade worse time for
+    better compute. Frontier membership alone is not a release gate. -/
+theorem frontier_can_regress :
+    let inc : Point := (1, 10)
+    let out : Point := (10, 1)
+    (∀ z ∈ [inc, out], ¬ dominates z out) ∧
+    ¬ noWorse out inc := by
+  simp [dominates, noWorse]
+
+#eval decide (noWorse (10, 1) (1, 10)) -- false
+
+/-- Keep the original candidates, admitting only no-worse costs. -/
+def admitted (inc : Point) (candidates : List Point) : List Point :=
+  candidates.filter (fun candidate => decide (noWorse candidate inc))
+
+theorem admitted_noWorse {inc out : Point} {candidates : List Point}
+    (h : out ∈ admitted inc candidates) : noWorse out inc := by
+  simpa [admitted] using (List.mem_filter.mp h).2
+
+/-- Baseline retention makes the guarded frontier nonempty. -/
+theorem admitted_frontier_exists {inc : Point} {candidates : List Point}
+    (hinc : inc ∈ candidates) :
+    ∃ out ∈ admitted inc candidates,
+      noWorse out inc ∧
+      ∀ z ∈ admitted inc candidates, ¬ dominates z out := by
+  have hi : inc ∈ admitted inc candidates := by
+    simp [admitted, noWorse, hinc]
+  have hn : admitted inc candidates ≠ [] := by
+    intro he
+    simp [he] at hi
+  obtain ⟨out, ho, hf⟩ := frontier_nonempty hn
+  exact ⟨out, ho, admitted_noWorse ho, hf⟩
+
+/-- Guarded frontier selection has BOTH guarantees, not just one.
+    Any dominator of an admitted point is itself no worse than the
+    incumbent, so the guarded frontier is also globally nondominated. -/
+theorem admitted_frontier_sound {inc out : Point} {candidates : List Point}
+    (hout : out ∈ admitted inc candidates)
+    (hf : ∀ z ∈ admitted inc candidates, ¬ dominates z out) :
+    noWorse out inc ∧ ∀ z ∈ candidates, ¬ dominates z out := by
+  have hn := admitted_noWorse hout
+  refine ⟨hn, ?_⟩
+  intro z hz hd
+  have hzi : noWorse z inc :=
+    ⟨Nat.le_trans hd.1 hn.1, Nat.le_trans hd.2.1 hn.2⟩
+  have hza : z ∈ admitted inc candidates := by
+    simp [admitted, hz, hzi]
+  exact hf z hza hd
+
+/-- Combined executable admission: comparable context, no lost
+    qualified behaviors, and no worse cost on either existing axis.
+    A Context value should be the immutable measurement-scope key,
+    not merely the source digest. Behavior coverage is certified input
+    to this gate; a list's membership does not itself certify behavior. -/
+def acceptsRelease {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (qualified candidate : List B) (inc out : Point) : Bool :=
+  decide (candidateContext = baselineContext) &&
+    accepts qualified candidate && decide (noWorse out inc)
+
+theorem acceptsRelease_iff {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (qualified candidate : List B) (inc out : Point) :
+    acceptsRelease baselineContext candidateContext qualified candidate inc out = true ↔
+      candidateContext = baselineContext ∧
+      (∀ b ∈ qualified, b ∈ candidate) ∧ noWorse out inc := by
+  simp [acceptsRelease, Bool.and_eq_true, accepts_iff, and_assoc]
+
+/-- Scope mismatch cannot silently reuse performance evidence. -/
+example : acceptsRelease "venue-A/workload-1" "venue-B/workload-1"
+    [1, 2] [1, 2] (10, 10) (1, 1) = false := by decide
+
+/-- An incomparable frontier trade-off is rejected, not relabeled an improvement. -/
+example : acceptsRelease "same-scope" "same-scope"
+    [1, 2] [1, 2] (1, 10) (10, 1) = false := by decide
+
+example : acceptsRelease "same-scope" "same-scope"
+    [1, 2] [1, 2] (10, 10) (1, 10) = true := by decide
+
+example : acceptsRelease "same-scope" "same-scope"
+    [1, 2] [1] (10, 10) (1, 1) = false := by decide
+
+#print axioms frontier_can_regress
+#print axioms admitted_frontier_exists
+#print axioms admitted_frontier_sound
+#print axioms acceptsRelease_iff
 
 end Pareto
 end SoftwareIsQuantifiable
