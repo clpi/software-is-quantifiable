@@ -650,5 +650,42 @@ theorem empty_submission_refused_when_qualified :
 #print axioms scalar_optimum_undominated
 #print axioms dominates_iff_interface
 
+/-- Exactly the robust dominance test for the full Cartesian product of the
+    two boxes. For a constrained joint distribution the corner pair might
+    be impossible and only the original sound direction applies. -/
+theorem separated_iff_all (ct cc it ic : Bounds) :
+    separated ct cc it ic ↔
+      ∀ x y, realizes ct cc x → realizes it ic y → dominates x y := by
+  constructor
+  · intro h x y hx hy
+    exact separated_sound h hx hy
+  · intro h
+    exact h (ct.hi,cc.hi) (it.lo,ic.lo)
+      ⟨ct.valid, Nat.le_refl _, cc.valid, Nat.le_refl _⟩
+      ⟨Nat.le_refl _, it.valid, Nat.le_refl _, ic.valid⟩
+
+/-- The interval replacement gate is complete for its matching context and
+    behavior criteria and the full Cartesian boxes on both cost axes. -/
+theorem replacement_iff_all {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (before after : Context) (prior : PriorQualification B) (submission : BehaviorSubmission B) (ct cc it ic : Bounds) :
+    acceptsReplacement before after prior submission ct cc it ic = true ↔
+      after = before ∧ (∀ b ∈ prior.qualified, b ∈ submission.offered) ∧
+      ∀ x y, realizes ct cc x → realizes it ic y → noWorse x y := by
+  rw [acceptsReplacement_iff]
+  apply and_congr_right
+  intro _
+  apply and_congr_right
+  intro _
+  constructor
+  · intro h x y hx hy
+    exact weaklySeparated_sound h hx hy
+  · intro h
+    exact h (ct.hi,cc.hi) (it.lo,ic.lo)
+      ⟨ct.valid, Nat.le_refl _, cc.valid, Nat.le_refl _⟩
+      ⟨Nat.le_refl _, it.valid, Nat.le_refl _, ic.valid⟩
+
+#print axioms separated_iff_all
+#print axioms replacement_iff_all
+
 end Pareto
 end SoftwareIsQuantifiable

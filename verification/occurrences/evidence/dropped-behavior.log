@@ -1,0 +1,5 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/dropped-behavior.lean:3:203: error: tactic 'decide' proved that the proposition
+  Pareto.acceptsReplacement "same" "same" { qualified := [1, 2] } { offered := [1] } { lo := 0, hi := 0, valid := ⋯ }
+      { lo := 0, hi := 0, valid := ⋯ } { lo := 0, hi := 0, valid := ⋯ } { lo := 0, hi := 0, valid := ⋯ } =
+    true
+is false

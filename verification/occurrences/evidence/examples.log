@@ -1,0 +1,11 @@
+Lean (version 4.19.0, x86_64-unknown-linux-gnu, commit 6caaee842e94, Release)
+([30, 40], [])
+'LedgerRepair.before_after' does not depend on any axioms
+'LedgerRepair.minimum_append' depends on axioms: [propext, Quot.sound]
+'LedgerRepair.duplicate_fails' does not depend on any axioms
+Lean (version 4.19.0, x86_64-unknown-linux-gnu, commit 6caaee842e94, Release)
+'RangeLedger.Identifiable.both_receipts_needed' depends on axioms: [propext, Quot.sound]
+'RangeLedger.Identifiable.determined_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RangeLedger.Identifiable.hidden_prefix' does not depend on any axioms
+'RangeLedger.Identifiable.open_cut' depends on axioms: [propext, Quot.sound]
+Rejected control: substitute an unobserved endpoint.

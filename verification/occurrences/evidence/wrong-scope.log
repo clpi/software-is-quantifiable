@@ -1,0 +1,3 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/wrong-scope.lean:3:94: error: tactic 'decide' proved that the proposition
+  Coverage.recorded (fun x => true) (Coverage.inScope 1 [(2, { exec := 7, events := 1 })]) { id := 7 } = true
+is false

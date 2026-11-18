@@ -220,3 +220,11 @@ Release-sequence monotonicity is not in this repository.
   stated in the table — never silently weakened.
 * The build evidence (command, exit state, theorem inventory) is
   recorded in the lane record that accompanies this repository.
+
+## Exact admission and counterexamples
+
+* `Finiteness.orderings_exact` characterizes the output of an executable schedule filter in both directions. It preserves run-value multiplicities and assigns every entry to an allowed venue. With runs [A,A,B], the earlier distinct-name coverage predicate also accepts [A,B,B]. The new filter rejects it. `orderings_valid` projects to that existing contract; `combine_orderings` proves that the existing tagged composition preserves both component multiplicities. Applications that distinguish separate invocations must give them distinct admitted identities.
+* `Coverage.scoped_recorded_exact` checks the supplied scope label before the existing ledger lookup. Two scopes may use the same local execution ID. Authenticating the label and its binding to the witness remains an ingress obligation. `Coverage.audit_complete` gives an exact audit over execution handles when an independent manifest enumerates precisely those handles. It does not count physical occurrences: equal handles can share one witness. Distinct physical executions therefore require distinct admitted handles; an empty or incomplete manifest can conceal a lost record.
+* `Pareto.separated_iff_all` and `replacement_iff_all` establish the converse of the interval guarantees. The extremal corner pair witnesses necessity for independent rectangular boxes. The existing release gate retains its context and behavior requirements. A workload that couples the realizations can exclude that corner pair.
+
+Build the default Lake target with the pinned Lean 4.19.0 toolchain using `lake --wfail build`.

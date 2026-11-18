@@ -175,5 +175,38 @@ theorem empty_ledger_has_no_platform_premise (valid : Witness → Bool)
 #print axioms empty_ledger_has_no_platform_premise
 #print axioms unrestricted_witness
 
+/-- A successful audit covers actual execution handles when the independently
+    supplied manifest contains exactly those handles. Distinct physical
+    occurrences need distinct admitted handles; multiplicity is not checked. -/
+theorem audit_complete (occurred : Execution → Prop) (valid : Witness → Bool)
+    (ledger : List Witness) (roster : List Execution) (manifest : ∀ e, occurred e ↔ e ∈ roster) :
+    missing valid ledger roster = [] ↔ ∀ e, occurred e → recorded valid ledger e = true := by
+  rw [← coverage_missing_iff]
+  simp only [manifest]
+
+/-- Project one named scope before invoking the existing ID-based checker.
+    A record for the same local ID in a different scope cannot supply evidence.
+    Scope labels and their binding to witnesses need independent authentication;
+    filtering caller-supplied labels does not establish that binding. -/
+def inScope (scope : Nat) (rows : List (Nat × Witness)) : List Witness :=
+  (rows.filter (fun row => decide (row.1 = scope))).map Prod.snd
+
+theorem scoped_recorded_exact (scope : Nat) (rows : List (Nat × Witness))
+    (valid : Witness → Bool) (e : Execution) :
+    recorded valid (inScope scope rows) e = true ↔
+      ∃ w, (scope,w) ∈ rows ∧ valid w = true ∧ Witnessed e w := by
+  rw [recorded_exact]
+  simp only [inScope,List.mem_map,List.mem_filter,decide_eq_true_eq]
+  constructor
+  · rintro ⟨w,⟨⟨s,v⟩,⟨hm,rfl⟩,rfl⟩,hv,he⟩
+    exact ⟨v,hm,hv,he⟩
+  · rintro ⟨w,hm,hv,he⟩
+    exact ⟨w,⟨(scope,w),⟨hm,rfl⟩,rfl⟩,hv,he⟩
+
+#guard !recorded (fun _ => true) (inScope 1 [(2,⟨7,1⟩)]) ⟨7⟩
+#guard recorded (fun _ => true) (inScope 2 [(2,⟨7,1⟩)]) ⟨7⟩
+
+#print axioms audit_complete
+#print axioms scoped_recorded_exact
 end Coverage
 end SoftwareIsQuantifiable
