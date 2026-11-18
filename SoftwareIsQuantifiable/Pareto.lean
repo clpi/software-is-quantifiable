@@ -298,6 +298,60 @@ theorem acceptsRelease_iff {B Context : Type}
       (∀ b ∈ qualified, b ∈ candidate) ∧ noWorse out inc := by
   simp [acceptsRelease, Bool.and_eq_true, accepts_iff, and_assoc]
 
+/-- A sufficient interval separation for replacement without worsening
+    either cost axis. Reuse the existing point relation on candidate
+    upper bounds and incumbent lower bounds. -/
+def weaklySeparated (ct cc it ic : Bounds) : Prop :=
+  noWorse (ct.hi, cc.hi) (it.lo, ic.lo)
+
+/-- Non-strict separation prevents regression for every pair of
+    realizations inside the supplied bounds. -/
+theorem weaklySeparated_sound {ct cc it ic : Bounds}
+    (h : weaklySeparated ct cc it ic) {x y : Point}
+    (hx : realizes ct cc x) (hy : realizes it ic y) :
+    noWorse x y := by
+  obtain ⟨ht, hc⟩ := h
+  obtain ⟨hx1, hx2, hx3, hx4⟩ := hx
+  obtain ⟨hy1, hy2, hy3, hy4⟩ := hy
+  exact ⟨by omega, by omega⟩
+
+/-- The interval adapter uses the same scoped release authority. The
+    supplied bounds and behavior lists must refer to the named common
+    measurement context; assigning physical evidence remains external. -/
+def acceptsReplacement {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (qualified candidate : List B) (ct cc it ic : Bounds) : Bool :=
+  acceptsRelease baselineContext candidateContext qualified candidate
+    (it.lo, ic.lo) (ct.hi, cc.hi)
+
+/-- Exactness is inherited from scoped release admission; there is no
+    second independently maintained behavior or point-cost gate. -/
+theorem acceptsReplacement_iff {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (qualified candidate : List B) (ct cc it ic : Bounds) :
+    acceptsReplacement baselineContext candidateContext qualified candidate ct cc it ic = true ↔
+      candidateContext = baselineContext ∧
+      (∀ b ∈ qualified, b ∈ candidate) ∧ weaklySeparated ct cc it ic :=
+  acceptsRelease_iff baselineContext candidateContext qualified candidate
+    (it.lo, ic.lo) (ct.hi, cc.hi)
+
+/-- Accepted interval replacement preserves scope and qualified behavior
+    and is no worse than the incumbent under every contained realization. -/
+theorem replacement_no_regression {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    {baselineContext candidateContext : Context}
+    {qualified candidate : List B} {ct cc it ic : Bounds}
+    (h : acceptsReplacement baselineContext candidateContext qualified candidate ct cc it ic = true)
+    {candidateCost incumbentCost : Point}
+    (hc : realizes ct cc candidateCost)
+    (hi : realizes it ic incumbentCost) :
+    candidateContext = baselineContext ∧
+    (∀ b ∈ qualified, b ∈ candidate) ∧ noWorse candidateCost incumbentCost := by
+  have accepted := (acceptsReplacement_iff baselineContext candidateContext
+    qualified candidate ct cc it ic).mp h
+  exact ⟨accepted.1, accepted.2.1, weaklySeparated_sound accepted.2.2 hc hi⟩
+
 /-- Scope mismatch cannot silently reuse performance evidence. -/
 example : acceptsRelease "venue-A/workload-1" "venue-B/workload-1"
     [1, 2] [1, 2] (10, 10) (1, 1) = false := by decide

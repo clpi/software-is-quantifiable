@@ -41,30 +41,35 @@ def account : List W → Acct W
   | [] => empty
   | w :: ws => join (single w) (account ws)
 
+omit [DecidableEq W] in
 /-- The join is associative. -/
 theorem join_assoc (a b c : Acct W) : join (join a b) c = join a (join b c) := by
   funext x
   show ((a x || b x) || c x) = (a x || (b x || c x))
   cases h1 : a x <;> cases h2 : b x <;> cases h3 : c x <;> rfl
 
+omit [DecidableEq W] in
 /-- The join is commutative. -/
 theorem join_comm (a b : Acct W) : join a b = join b a := by
   funext x
   show (a x || b x) = (b x || a x)
   cases h1 : a x <;> cases h2 : b x <;> rfl
 
+omit [DecidableEq W] in
 /-- The join is idempotent. -/
 theorem join_idem (a : Acct W) : join a a = a := by
   funext x
   show (a x || a x) = a x
   cases h1 : a x <;> rfl
 
+omit [DecidableEq W] in
 /-- The empty accounting is a left identity for the join. -/
 theorem join_empty_left (a : Acct W) : join empty a = a := by
   funext x
   show (false || a x) = a x
   cases h1 : a x <;> rfl
 
+omit [DecidableEq W] in
 /-- The empty accounting is a right identity for the join. -/
 theorem join_empty_right (a : Acct W) : join a empty = a := by
   funext x
@@ -135,7 +140,7 @@ theorem account_ext {l₁ l₂ : List W} (h : ∀ x, x ∈ l₁ ↔ x ∈ l₂) 
     nothing. -/
 theorem account_perm {l₁ l₂ : List W} (h : List.Perm l₁ l₂) :
     account l₁ = account l₂ :=
-  account_ext (fun x => h.mem_iff)
+  account_ext (fun _ => h.mem_iff)
 
 /-- **Duplication-independence**: presenting every witness twice
     changes nothing; a repeated execution of the same step costs
