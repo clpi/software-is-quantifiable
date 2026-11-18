@@ -22,6 +22,8 @@ namespace Fold
 
 variable {W : Type} [DecidableEq W]
 
+set_option linter.unusedSectionVars false
+
 /-- An accounting state: for each witness identity, whether it is
     recorded. Content addressing means a witness is its identity —
     two records with one identity are one witness. -/
@@ -163,6 +165,92 @@ theorem account_cons_self (w : W) (l : List W) (h : w ∈ l) :
   · show (decide (x = w) || account l x) = account l x
     rw [decide_false_of_not hx]
     cases hb : account l x <;> rfl
+
+/-- Accounting states of two witness domains, placed side by side. -/
+def embedAcct {W1 W2 : Type _} (a : Acct W1) (b : Acct W2) : Acct (W1 ⊕ W2)
+  | .inl w => a w
+  | .inr w => b w
+
+theorem account_map_inl {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
+    (l : List W1) (w : W1) :
+    account (l.map (@Sum.inl W1 W2)) (Sum.inl w) = account l w := by
+  by_cases h : account l w = true
+  · have hmem : Sum.inl w ∈ l.map (@Sum.inl W1 W2) :=
+      List.mem_map_of_mem (account_eq_true_iff.mp h)
+    rw [h, account_eq_true_iff.mpr hmem]
+  · have hf : account l w = false := by
+      cases hb : account l w with
+      | true => exact absurd hb h
+      | false => rfl
+    have hnot : Sum.inl w ∉ l.map (@Sum.inl W1 W2) := by
+      intro hm
+      rcases List.mem_map.mp hm with ⟨w', hw', he⟩
+      cases he
+      exact h (account_eq_true_iff.mpr hw')
+    cases hb : account (l.map (@Sum.inl W1 W2)) (Sum.inl w) with
+    | true => exact absurd (account_eq_true_iff.mp hb) hnot
+    | false => rw [hf]
+
+theorem account_map_inl_inr {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
+    (l : List W1) (w : W2) :
+    account (l.map (@Sum.inl W1 W2)) (Sum.inr w) = false := by
+  cases hb : account (l.map (@Sum.inl W1 W2)) (Sum.inr w) with
+  | false => rfl
+  | true =>
+    rcases List.mem_map.mp (account_eq_true_iff.mp hb) with ⟨_, _, he⟩
+    cases he
+
+theorem account_map_inr {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
+    (l : List W2) (w : W2) :
+    account (l.map (@Sum.inr W1 W2)) (Sum.inr w) = account l w := by
+  by_cases h : account l w = true
+  · have hmem : Sum.inr w ∈ l.map (@Sum.inr W1 W2) :=
+      List.mem_map_of_mem (account_eq_true_iff.mp h)
+    rw [h, account_eq_true_iff.mpr hmem]
+  · have hf : account l w = false := by
+      cases hb : account l w with
+      | true => exact absurd hb h
+      | false => rfl
+    have hnot : Sum.inr w ∉ l.map (@Sum.inr W1 W2) := by
+      intro hm
+      rcases List.mem_map.mp hm with ⟨w', hw', he⟩
+      cases he
+      exact h (account_eq_true_iff.mpr hw')
+    cases hb : account (l.map (@Sum.inr W1 W2)) (Sum.inr w) with
+    | true => exact absurd (account_eq_true_iff.mp hb) hnot
+    | false => rw [hf]
+
+theorem account_map_inr_inl {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
+    (l : List W2) (w : W1) :
+    account (l.map (@Sum.inr W1 W2)) (Sum.inl w) = false := by
+  cases hb : account (l.map (@Sum.inr W1 W2)) (Sum.inl w) with
+  | false => rfl
+  | true =>
+    rcases List.mem_map.mp (account_eq_true_iff.mp hb) with ⟨_, _, he⟩
+    cases he
+
+/-- **Cross-domain composition of the fold.** Accounting a tagged
+    concatenation is the side-by-side pair of the component accounts.
+    A witness of one domain does not appear in the other. -/
+theorem account_sum {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
+    (l1 : List W1) (l2 : List W2) :
+    account (l1.map (@Sum.inl W1 W2) ++ l2.map (@Sum.inr W1 W2)) =
+      embedAcct (account l1) (account l2) := by
+  rw [account_append]
+  funext x
+  cases x with
+  | inl w =>
+    show (account (l1.map (@Sum.inl W1 W2)) (Sum.inl w) ||
+        account (l2.map (@Sum.inr W1 W2)) (Sum.inl w)) =
+      account l1 w
+    rw [account_map_inl l1 w, account_map_inr_inl l2 w]
+    cases account l1 w <;> rfl
+  | inr w =>
+    show (account (l1.map (@Sum.inl W1 W2)) (Sum.inr w) ||
+        account (l2.map (@Sum.inr W1 W2)) (Sum.inr w)) =
+      account l2 w
+    rw [account_map_inl_inr l1 w, account_map_inr l2 w]
+    cases account l2 w <;> rfl
 
 end Fold
 end SoftwareIsQuantifiable

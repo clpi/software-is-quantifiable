@@ -34,36 +34,39 @@ def Witnessed (e : Execution) (w : Witness) : Prop :=
 def recorded (valid : Witness → Bool) (ledger : List Witness) (e : Execution) : Bool :=
   ledger.any (fun w => valid w && decide (w.exec = e.id))
 
-/-- The platform premise, named exactly as spec §19.4 names its
-    assumptions. This is assumed, never proved, in this repository.
+/-- Privilege rank. A smaller rank sits below a larger rank. -/
+abbrev Privilege := Nat
 
-    * `sensorBelow`: the sensor sits strictly below the observed
-      software in privilege.
-    * `ledgerAppendOnly`: observed software can cause appends to
-      the witness ledger, never edits or deletions.
-    * `mediated`: the protection model holds — userland software
-      holds no direct access to anything it affects, so every
-      execution crosses the boundary and is witnessed (§19.2). -/
+/-- Checkable sensor relation: the sensor's privilege rank is strictly
+    below the observed software's rank. -/
+def sensorSitsBelow (sensor observed : Privilege) : Bool :=
+  decide (sensor < observed)
+
+/-- The platform premise, named as spec §19.4 names its assumptions.
+    Each field is an assumption. Nothing in this structure is derived.
+
+    * `sensorBelow` is `sensorSitsBelow sensorPrivilege observedPrivilege = true`,
+      a comparison of the two named ranks, not an arbitrary proposition.
+    * `ledgerAppendOnly` is the append-only assumption, supplied with its proof.
+    * `mediated` is the assumption that every roster execution has a
+      validated ledger record. -/
 structure PlatformPremise (valid : Witness → Bool) (ledger : List Witness)
     (roster : List Execution) where
-  /-- The sensor sits strictly below the observed software. -/
-  sensorBelow : Prop
-  /-- The named sensor condition holds; naming a proposition is insufficient. -/
-  sensorBelowHolds : sensorBelow
+  /-- Privilege rank of the sensor. -/
+  sensorPrivilege : Privilege
+  /-- Privilege rank of the observed software. -/
+  observedPrivilege : Privilege
+  /-- The sensor relation holds for these two ranks. -/
+  sensorBelow : sensorSitsBelow sensorPrivilege observedPrivilege = true
   /-- The ledger is append-only from below. -/
   ledgerAppendOnly : Prop
   /-- The named append-only condition holds. -/
   ledgerAppendOnlyHolds : ledgerAppendOnly
-  /-- Complete mediation of this roster through the existing validated-ledger
-      checker. No constructed handle or witness substitutes for membership. -/
+  /-- Assumption: every named execution has a validated ledger record. -/
   mediated : ∀ e ∈ roster, recorded valid ledger e = true
 
-/-- **Coverage, conditional on the named premise.** Under the
-    mediation premise, every named execution has a validated ledger
-    record. The proof is one line because there is nothing to
-    prove: the entire content of the claim is the premise, and the
-    premise is physical, not mathematical. -/
-theorem coverage {valid : Witness → Bool} {ledger : List Witness}
+/-- Assumption, not a derived theorem. `coverage P` is `P.mediated`. -/
+abbrev coverage {valid : Witness → Bool} {ledger : List Witness}
     {roster : List Execution} (P : PlatformPremise valid ledger roster) :
     ∀ e ∈ roster, recorded valid ledger e = true :=
   P.mediated
@@ -166,6 +169,11 @@ theorem empty_ledger_has_no_platform_premise (valid : Witness → Bool)
 #print axioms recorded_exact
 #print axioms missing_exact
 #print axioms missing_append
+#print axioms missing_empty
+#print axioms coverage_missing_iff
+#print axioms empty_roster_covered
+#print axioms empty_ledger_has_no_platform_premise
+#print axioms unrestricted_witness
 
 end Coverage
 end SoftwareIsQuantifiable

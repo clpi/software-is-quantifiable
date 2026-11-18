@@ -87,10 +87,10 @@ try:
          'ledger.any (fun w => valid w && decide (w.exec = e.id))',
          'ledger.any (fun w => decide (w.exec = e.id))'),
         ('missing-compute-gate', 'Pareto.lean',
-         'accepts qualified candidate && decide (noWorse out inc)',
-         'accepts qualified candidate && decide (out.1 ≤ inc.1)'),
+         'noQualifiedBehaviorLost prior submission && decide (noWorse out inc)',
+         'noQualifiedBehaviorLost prior submission && decide (out.1 ≤ inc.1)'),
         ('missing-behavior-gate', 'Pareto.lean',
-         'accepts qualified candidate && decide (noWorse out inc)',
+         'noQualifiedBehaviorLost prior submission && decide (noWorse out inc)',
          'true && decide (noWorse out inc)'),
     ]
     record['controls'] = []

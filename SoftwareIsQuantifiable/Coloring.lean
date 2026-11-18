@@ -16,6 +16,8 @@ namespace Coloring
 
 variable {F : Type} [DecidableEq F]
 
+set_option linter.unusedSectionVars false
+
 /-- A ground Horn rule over facts: from all of its premises, conclude
     its conclusion. -/
 structure Rule (F : Type) where
@@ -419,6 +421,305 @@ theorem coloring_complete (rules : List (Rule F)) (U : List F) (seed : State F)
 theorem seed_le_coloring (rules : List (Rule F)) (U : List F) (seed : State F) :
     ∀ f, seed f = true → coloring rules U seed f = true :=
   fun f hf => le_iter rules (U.length + 1) seed f hf
+
+/-- Pointwise inclusion of coloring states. -/
+def stateLe (a b : State F) : Prop := ∀ f, a f = true → b f = true
+
+theorem stateLe_refl (a : State F) : stateLe a a := fun _ h => h
+
+theorem stateLe_trans {a b c : State F} (hab : stateLe a b) (hbc : stateLe b c) :
+    stateLe a c := fun f hf => hbc f (hab f hf)
+
+theorem stateLe_antisymm {a b : State F} (hab : stateLe a b) (hba : stateLe b a) :
+    a = b := by
+  funext f
+  cases ha : a f <;> cases hb : b f
+  · rfl
+  · exact absurd (hba f hb) (by rw [ha]; exact Bool.noConfusion)
+  · exact absurd (hab f ha) (by rw [hb]; exact Bool.noConfusion)
+  · rfl
+
+/-- The closure step is monotone in the state. -/
+theorem step_mono (rules : List (Rule F)) {s t : State F} (hle : stateLe s t) :
+    stateLe (step rules s) (step rules t) := by
+  intro f hf
+  have h' : (s f || rules.any
+      (fun r => decide (r.conclusion = f) && holds s r.premises)) = true := hf
+  cases hs : s f with
+  | true =>
+    have ht : t f = true := hle f hs
+    show (t f || rules.any
+      (fun r => decide (r.conclusion = f) && holds t r.premises)) = true
+    rw [ht]
+    rfl
+  | false =>
+    have hany : rules.any
+        (fun r => decide (r.conclusion = f) && holds s r.premises) = true := by
+      simpa [hs] using h'
+    rcases any_eq_true.mp hany with ⟨r, hr, hfire⟩
+    have hdec : decide (r.conclusion = f) = true := (and_eq_true hfire).1
+    have hholds : holds s r.premises = true := (and_eq_true hfire).2
+    have hholds' : holds t r.premises = true :=
+      holds_eq_true.mpr (fun p hp => hle p (holds_eq_true.mp hholds p hp))
+    have hany' : rules.any
+        (fun r' => decide (r'.conclusion = f) && holds t r'.premises) = true :=
+      any_eq_true.mpr ⟨r, hr, by rw [hdec, hholds']; rfl⟩
+    show (t f || rules.any
+      (fun r' => decide (r'.conclusion = f) && holds t r'.premises)) = true
+    simp [hany']
+
+theorem iter_mono (rules : List (Rule F)) :
+    ∀ (k : Nat) {s t : State F}, stateLe s t →
+      stateLe (iter rules k s) (iter rules k t) := by
+  intro k
+  induction k with
+  | zero =>
+    intro s t hle
+    exact hle
+  | succ k IH =>
+    intro s t hle
+    exact step_mono rules (IH hle)
+
+/-- **Monotonicity in the seed.** A larger seed only adds colored facts.
+    The snapshot bound is not required for this direction. -/
+theorem coloring_mono_seed (rules : List (Rule F)) (U : List F) {s t : State F}
+    (hle : stateLe s t) : stateLe (coloring rules U s) (coloring rules U t) :=
+  iter_mono rules (U.length + 1) hle
+
+/-- **Idempotence.** Re-closing a coloring changes nothing. The snapshot
+    condition is the same one `coloring_fixed` uses. -/
+theorem coloring_idem (rules : List (Rule F)) (U : List F) (seed : State F)
+    (hU : ∀ r ∈ rules, r.conclusion ∈ U) :
+    coloring rules U (coloring rules U seed) = coloring rules U seed := by
+  have hfix := coloring_fixed rules U seed hU
+  unfold coloring
+  exact iter_eq_of_fixed hfix (U.length + 1)
+
+def joinSt (a b : State F) : State F := fun f => a f || b f
+
+theorem stateLe_join_left (a b : State F) : stateLe a (joinSt a b) := by
+  intro f hf
+  show (a f || b f) = true
+  rw [hf]
+  rfl
+
+theorem stateLe_join_right (a b : State F) : stateLe b (joinSt a b) := by
+  intro f hf
+  show (a f || b f) = true
+  rw [hf]
+  cases a f <;> rfl
+
+theorem stateLe_join {a b c : State F} (ha : stateLe a c) (hb : stateLe b c) :
+    stateLe (joinSt a b) c := by
+  intro f hf
+  have h' : (a f || b f) = true := hf
+  cases ha' : a f with
+  | true => exact ha f ha'
+  | false =>
+    have hb' : b f = true := by simpa [ha'] using h'
+    exact hb f hb'
+
+/-- **Compounding.** Closing the join of two seeds equals closing the
+    join of their colorings:
+    `C(s₁ ∨ s₂) = C(C(s₁) ∨ C(s₂))`.
+    Cross-source consequences are kept, because the right-hand side
+    closes again. This is not distribution over join; that stronger
+    claim is false (`not_coloring_distributes`). -/
+theorem coloring_compound (rules : List (Rule F)) (U : List F)
+    (s1 s2 : State F) (hU : ∀ r ∈ rules, r.conclusion ∈ U) :
+    coloring rules U (joinSt s1 s2) =
+      coloring rules U (joinSt (coloring rules U s1) (coloring rules U s2)) := by
+  let c1 := coloring rules U s1
+  let c2 := coloring rules U s2
+  let j := joinSt s1 s2
+  let cj := coloring rules U j
+  let mid := joinSt c1 c2
+  have hc1 : stateLe c1 cj :=
+    coloring_mono_seed rules U (stateLe_join_left s1 s2)
+  have hc2 : stateLe c2 cj :=
+    coloring_mono_seed rules U (stateLe_join_right s1 s2)
+  have hto : stateLe (coloring rules U mid) cj := by
+    have hmid : stateLe mid cj := stateLe_join hc1 hc2
+    have hstep := coloring_mono_seed rules U hmid
+    simpa [cj, coloring_idem rules U j hU] using hstep
+  have hback : stateLe cj (coloring rules U mid) := by
+    have hs1 : stateLe s1 c1 := fun f hf => seed_le_coloring rules U s1 f hf
+    have hs2 : stateLe s2 c2 := fun f hf => seed_le_coloring rules U s2 f hf
+    exact coloring_mono_seed rules U
+      (stateLe_join (stateLe_trans hs1 (stateLe_join_left c1 c2))
+        (stateLe_trans hs2 (stateLe_join_right c1 c2)))
+  exact stateLe_antisymm hback hto
+
+/-- A rule embedded into the left of a sum of fact domains. -/
+def embedRuleLeft {F1 F2 : Type _} (r : Rule F1) : Rule (F1 ⊕ F2) where
+  premises := r.premises.map Sum.inl
+  conclusion := Sum.inl r.conclusion
+
+/-- A rule embedded into the right of a sum of fact domains. -/
+def embedRuleRight {F1 F2 : Type _} (r : Rule F2) : Rule (F1 ⊕ F2) where
+  premises := r.premises.map Sum.inr
+  conclusion := Sum.inr r.conclusion
+
+/-- Independent seeds, one per domain. -/
+def embedSeed {F1 F2 : Type _} (s1 : State F1) (s2 : State F2) : State (F1 ⊕ F2)
+  | .inl x => s1 x
+  | .inr x => s2 x
+
+def embedUniverse {F1 F2 : Type _} (U1 : List F1) (U2 : List F2) : List (F1 ⊕ F2) :=
+  U1.map Sum.inl ++ U2.map Sum.inr
+
+theorem deriv_embed_left {F1 F2 : Type _} {rules1 : List (Rule F1)}
+    {seed1 : State F1} {seed2 : State F2} {rules2 : List (Rule F2)} :
+    ∀ {f : F1}, Deriv rules1 seed1 f →
+      Deriv (rules1.map embedRuleLeft ++ rules2.map embedRuleRight)
+        (embedSeed seed1 seed2) (Sum.inl f) := by
+  intro f h
+  induction h with
+  | seed hs =>
+    exact Deriv.seed (by simpa [embedSeed] using hs)
+  | apply hr hp IH =>
+    rename_i r
+    refine Deriv.apply (r := embedRuleLeft r) ?_ ?_
+    · exact List.mem_append_left _
+        (List.mem_map_of_mem hr)
+    · intro p hpm
+      rcases List.mem_map.mp hpm with ⟨p1, hp1, rfl⟩
+      exact IH p1 hp1
+
+theorem deriv_embed_right {F1 F2 : Type _} {rules1 : List (Rule F1)}
+    {seed1 : State F1} {seed2 : State F2} {rules2 : List (Rule F2)} :
+    ∀ {f : F2}, Deriv rules2 seed2 f →
+      Deriv (rules1.map embedRuleLeft ++ rules2.map embedRuleRight)
+        (embedSeed seed1 seed2) (Sum.inr f) := by
+  intro f h
+  induction h with
+  | seed hs =>
+    exact Deriv.seed (by simpa [embedSeed] using hs)
+  | apply hr hp IH =>
+    rename_i r
+    refine Deriv.apply (r := embedRuleRight r) ?_ ?_
+    · exact List.mem_append_right _
+        (List.mem_map_of_mem hr)
+    · intro p hpm
+      rcases List.mem_map.mp hpm with ⟨p1, hp1, rfl⟩
+      exact IH p1 hp1
+
+/-- On segregated rule sets, a derivable sum-fact projects to a
+    derivation in its own component. No rule crosses the sum. -/
+theorem deriv_segregated {F1 F2 : Type _}
+    {rules1 : List (Rule F1)} {rules2 : List (Rule F2)}
+    {seed1 : State F1} {seed2 : State F2} {g : F1 ⊕ F2}
+    (h : Deriv (rules1.map embedRuleLeft ++ rules2.map embedRuleRight)
+      (embedSeed seed1 seed2) g) :
+    (∀ f, g = Sum.inl f → Deriv rules1 seed1 f) ∧
+    (∀ f, g = Sum.inr f → Deriv rules2 seed2 f) := by
+  induction h with
+  | seed hs =>
+    refine ⟨fun f hf => ?_, fun f hf => ?_⟩
+    · subst hf
+      exact Deriv.seed (by simpa [embedSeed] using hs)
+    · subst hf
+      exact Deriv.seed (by simpa [embedSeed] using hs)
+  | apply hr hp IH =>
+    rename_i r
+    cases List.mem_append.mp hr with
+    | inl hL =>
+      rcases List.mem_map.mp hL with ⟨r1, hr1, rfl⟩
+      refine ⟨fun f hf => ?_, fun f hf => ?_⟩
+      · cases hf
+        apply Deriv.apply hr1
+        intro p hpm
+        have hmem : (Sum.inl p : F1 ⊕ F2) ∈ (embedRuleLeft r1).premises :=
+          List.mem_map_of_mem hpm
+        exact (IH (Sum.inl p) hmem).1 p rfl
+      · cases hf
+    | inr hR =>
+      rcases List.mem_map.mp hR with ⟨r2, hr2, rfl⟩
+      refine ⟨fun f hf => ?_, fun f hf => ?_⟩
+      · cases hf
+      · cases hf
+        apply Deriv.apply hr2
+        intro p hpm
+        have hmem : (Sum.inr p : F1 ⊕ F2) ∈ (embedRuleRight r2).premises :=
+          List.mem_map_of_mem hpm
+        exact (IH (Sum.inr p) hmem).2 p rfl
+
+theorem embed_universe_closed {F1 F2 : Type _}
+    {rules1 : List (Rule F1)} {rules2 : List (Rule F2)}
+    {U1 : List F1} {U2 : List F2}
+    (h1 : ∀ r ∈ rules1, r.conclusion ∈ U1)
+    (h2 : ∀ r ∈ rules2, r.conclusion ∈ U2) :
+    ∀ r ∈ rules1.map embedRuleLeft ++ rules2.map embedRuleRight,
+      r.conclusion ∈ embedUniverse U1 U2 := by
+  intro r hr
+  cases List.mem_append.mp hr with
+  | inl hL =>
+    rcases List.mem_map.mp hL with ⟨r1, hr1, rfl⟩
+    unfold embedUniverse
+    exact List.mem_append_left _ (List.mem_map_of_mem (h1 r1 hr1))
+  | inr hR =>
+    rcases List.mem_map.mp hR with ⟨r2, hr2, rfl⟩
+    unfold embedUniverse
+    exact List.mem_append_right _ (List.mem_map_of_mem (h2 r2 hr2))
+
+/-- **Segregated domains factor.** When every rule lies entirely on one
+    side of a sum of fact domains, the coloring of the sum at a left
+    fact is the left component's coloring. Independent components
+    compose by embedding; a cross-domain rule is a different theorem,
+    and distribution over join is false. -/
+theorem coloring_segregated_left {F1 F2 : Type _} [DecidableEq F1] [DecidableEq F2]
+    (rules1 : List (Rule F1)) (rules2 : List (Rule F2))
+    (U1 : List F1) (U2 : List F2) (seed1 : State F1) (seed2 : State F2)
+    (hU1 : ∀ r ∈ rules1, r.conclusion ∈ U1)
+    (hU2 : ∀ r ∈ rules2, r.conclusion ∈ U2) (f : F1) :
+    coloring (rules1.map embedRuleLeft ++ rules2.map embedRuleRight)
+        (embedUniverse U1 U2) (embedSeed seed1 seed2) (Sum.inl f) =
+      coloring rules1 U1 seed1 f := by
+  let rules := rules1.map embedRuleLeft ++ rules2.map embedRuleRight
+  let U := embedUniverse U1 U2
+  let seed := embedSeed seed1 seed2
+  have hU := embed_universe_closed hU1 hU2
+  cases hb : coloring rules U seed (Sum.inl f) <;>
+    cases hb2 : coloring rules1 U1 seed1 f
+  · rfl
+  · have d1 := coloring_sound rules1 U1 seed1 f hb2
+    have d := deriv_embed_left (rules2 := rules2) (seed2 := seed2) d1
+    have ht := coloring_complete rules U seed hU (Sum.inl f) d
+    rw [hb] at ht
+    cases ht
+  · have d := coloring_sound rules U seed (Sum.inl f) hb
+    have d1 := (deriv_segregated d).1 f rfl
+    have ht := coloring_complete rules1 U1 seed1 hU1 f d1
+    rw [hb2] at ht
+    cases ht
+  · rfl
+
+theorem coloring_segregated_right {F1 F2 : Type _} [DecidableEq F1] [DecidableEq F2]
+    (rules1 : List (Rule F1)) (rules2 : List (Rule F2))
+    (U1 : List F1) (U2 : List F2) (seed1 : State F1) (seed2 : State F2)
+    (hU1 : ∀ r ∈ rules1, r.conclusion ∈ U1)
+    (hU2 : ∀ r ∈ rules2, r.conclusion ∈ U2) (f : F2) :
+    coloring (rules1.map embedRuleLeft ++ rules2.map embedRuleRight)
+        (embedUniverse U1 U2) (embedSeed seed1 seed2) (Sum.inr f) =
+      coloring rules2 U2 seed2 f := by
+  let rules := rules1.map embedRuleLeft ++ rules2.map embedRuleRight
+  let U := embedUniverse U1 U2
+  let seed := embedSeed seed1 seed2
+  have hU := embed_universe_closed hU1 hU2
+  cases hb : coloring rules U seed (Sum.inr f) <;>
+    cases hb2 : coloring rules2 U2 seed2 f
+  · rfl
+  · have d2 := coloring_sound rules2 U2 seed2 f hb2
+    have d := deriv_embed_right (rules1 := rules1) (seed1 := seed1) d2
+    have ht := coloring_complete rules U seed hU (Sum.inr f) d
+    rw [hb] at ht
+    cases ht
+  · have d := coloring_sound rules U seed (Sum.inr f) hb
+    have d2 := (deriv_segregated d).2 f rfl
+    have ht := coloring_complete rules2 U2 seed2 hU2 f d2
+    rw [hb2] at ht
+    cases ht
+  · rfl
 
 end Coloring
 end SoftwareIsQuantifiable

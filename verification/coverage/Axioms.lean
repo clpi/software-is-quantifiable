@@ -52,7 +52,9 @@ import SoftwareIsQuantifiable
 #print axioms SoftwareIsQuantifiable.Pareto.frontier_nonempty
 #print axioms SoftwareIsQuantifiable.Pareto.frontier_not_dominated
 #print axioms SoftwareIsQuantifiable.Pareto.and_eq_true
-#print axioms SoftwareIsQuantifiable.Pareto.accepts_iff
+#print axioms SoftwareIsQuantifiable.Pareto.noQualifiedBehaviorLost_iff
+#print axioms SoftwareIsQuantifiable.Pareto.omitted_qualified_behavior_refused
+#print axioms SoftwareIsQuantifiable.Pareto.empty_submission_refused_when_qualified
 #print axioms SoftwareIsQuantifiable.Pareto.not_per_execution_dominance
 #print axioms SoftwareIsQuantifiable.Pareto.frontier_can_regress
 #print axioms SoftwareIsQuantifiable.Pareto.admitted_noWorse
