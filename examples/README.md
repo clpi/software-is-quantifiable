@@ -25,3 +25,7 @@ The [verification transcript](verification.txt) includes the observed outputs an
 ## Scope
 
 This fixture accepts positive event counts and trusts the independent roster. Physical authenticity and completeness of the production sensor remain external obligations.
+
+## Additional worked example
+
+[When can a missing reading be recovered exactly?](range-ledger/README.md)

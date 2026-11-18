@@ -9,3 +9,4 @@ mkdir -p "$build/SoftwareIsQuantifiable"
 "$lean_bin" -DwarningAsError=true -o "$build/SoftwareIsQuantifiable/Coverage.olean" "SoftwareIsQuantifiable/Coverage.lean" >/dev/null
 "$lean_bin" --version
 "$lean_bin" -DwarningAsError=true examples/LedgerRepair.lean
+sh examples/range-ledger/check.sh
