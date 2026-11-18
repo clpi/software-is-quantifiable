@@ -21,9 +21,9 @@ OUT = args.output.resolve()
 if OUT == HERE or HERE in OUT.parents:
     parser.error('Keep replay outputs separate from the committed evidence directory')
 OUT.mkdir(parents=True, exist_ok=True)
-REFERENCE = json.loads((HERE / 'record.json').read_text())
+REFERENCE = json.loads((HERE / 'subject.json').read_text())
 record = {'started_at': datetime.now(timezone.utc).isoformat(),
-          'base': 'a1d84c603906edfbf34dd117e5bd5de986db3940', 'commands': []}
+          'base': 'ba27febf48c85bccaaccbace7cc3faba5eff879c', 'commands': []}
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -47,7 +47,7 @@ try:
     record['sources'] = {str(p.relative_to(REPO)): digest(p) for p in sources}
     assert record['sources'] == REFERENCE['sources'], 'Source differs from the committed verification subject'
     assert record['lean_version'] == REFERENCE['lean_version'], 'Use the recorded Lean 4.15.0 toolchain version'
-    record['reference_record_sha256'] = digest(HERE / 'record.json')
+    record['subject_sha256'] = digest(HERE / 'subject.json')
     run('clean', [BIN/'lake', 'clean'])
     build = run('build', [BIN/'lake', '--wfail', 'build'])
     assert 'Build completed successfully.' in build

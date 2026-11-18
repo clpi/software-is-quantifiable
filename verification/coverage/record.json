@@ -1,6 +1,6 @@
 {
-  "started_at": "2026-11-18T09:16:48.427320+00:00",
-  "base": "a1d84c603906edfbf34dd117e5bd5de986db3940",
+  "started_at": "2026-11-18T09:41:46.568815+00:00",
+  "base": "ba27febf48c85bccaaccbace7cc3faba5eff879c",
   "commands": [
     {
       "name": "lean-version",
@@ -33,7 +33,7 @@
       ],
       "exit_code": 0,
       "expected_exit": 0,
-      "stdout_sha256": "447b25b6176ea23f5b5e21243f8176b8de42c2847293e54c0ac20eead8dfdea6",
+      "stdout_sha256": "d03b97b5dc1222dd07c2e15a702b78aabcc36b8082193693aea17884d812aaaf",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -57,11 +57,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/Axioms.lean"
+        "/workspace/scratch/9752059aa620/evidence/quant-final-replay/Axioms.lean"
       ],
       "exit_code": 0,
       "expected_exit": 0,
-      "stdout_sha256": "d917bae232a321bda0ad0173066aba6a91c907c274b98ccd014d59727c94ecc4",
+      "stdout_sha256": "a38f4fbe738663e04e70b073b182caab00100154792d2f393c426b6d29dbeed1",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -70,11 +70,11 @@
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
-        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/unrecorded-witness.lean"
+        "/workspace/scratch/9752059aa620/evidence/quant-final-replay/unrecorded-witness.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "stdout_sha256": "ca91829db372e9e7d28792a767b687d7d385b9838eba6ca9fa7542d277a673b8",
+      "stdout_sha256": "258f6c92d92c3564c9053b2ec7a66d72824595dbfa2b98c903d39522022dc64c",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -83,11 +83,11 @@
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
-        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-validator.lean"
+        "/workspace/scratch/9752059aa620/evidence/quant-final-replay/missing-validator.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "stdout_sha256": "e88c7fc1fe9a405f3d38995ea5c8cdaef13c18e5f59b635e19d9ae8f3aa42aed",
+      "stdout_sha256": "f1ab2f43ae88760e5dff806d2440eb3c6968178dc28d63f34986b7c6cb0ce0d7",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -96,11 +96,11 @@
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
-        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-compute-gate.lean"
+        "/workspace/scratch/9752059aa620/evidence/quant-final-replay/missing-compute-gate.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "stdout_sha256": "51e33bfbae0569cb223a21e06ac74214c7859c0eb25c7cdf0f524abc28f6f5d3",
+      "stdout_sha256": "7c3011b303b14b0990e2d8574fa3c41fe038fe4a4534d842094d95aee386b294",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -109,11 +109,11 @@
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
-        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-behavior-gate.lean"
+        "/workspace/scratch/9752059aa620/evidence/quant-final-replay/missing-behavior-gate.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "stdout_sha256": "486e0aef0ad4ad46be2c9b84ddcab800cb95342f518a1f249b7ef3d1ccd242e7",
+      "stdout_sha256": "c3de871297ecb75ea6c1b25f1619f3b459c7ef36d98cff85f64397b38d9011bd",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
@@ -121,15 +121,16 @@
   "lean_sha256": "eacf754d25ae86ea076882a34b9444f2485659d9df4266b821443b28ca95a215",
   "sources": {
     "SoftwareIsQuantifiable/Coloring.lean": "6e54ed8c7a3e927b636501675931a131b867abaae5b8706fd7a3708c5f3b3fa6",
-    "SoftwareIsQuantifiable/Coverage.lean": "c80f3b1dfcf6649f2bc32714a86674edbb45f80427308176d9d2d01f61a9955c",
-    "SoftwareIsQuantifiable/Finiteness.lean": "fa48e95e71a4c4d2451b04d4c7f053bb97a5eecc87ccb2c1b687b6875844c601",
+    "SoftwareIsQuantifiable/Coverage.lean": "5caa76b8ba35b2979198c95f8af382840e933caf2cb321e7128bd24ce50018a9",
+    "SoftwareIsQuantifiable/Finiteness.lean": "cd2b7fc97cf61b68c86efc0f3d81d9eb1e766d9ab313f4690663fcb5642b30bc",
     "SoftwareIsQuantifiable/Fold.lean": "93a764ea2c26f49227c0c1b557750c81c98b44f14d5f1b5e07f475df47d651c8",
-    "SoftwareIsQuantifiable/Pareto.lean": "20214e974be2df2fd1e9e98f8f04f9739ad3beeeacec2883e85b6d21265d4e40",
+    "SoftwareIsQuantifiable/Pareto.lean": "69665ce0db0383708ec7f2166e9798b84b669b4de639e0ef3c133fb7ec199e73",
     "SoftwareIsQuantifiable.lean": "53b3a207bdb18ce34192da37fcde9aaa04c7e6a1a8627e70a59ef0c367056812",
     "lakefile.lean": "c37338fd852ab251493663a094e9326812e81eab24507a6b059336aa6a3caf1f",
     "verification/ParetoControls.lean": "60ad9aaf425aef9b87ee689eff17bbd42aeda95aa29640bd37d0d299354a4dad"
   },
-  "theorem_count": 63,
+  "subject_sha256": "042f9541d33f429ddb26ea2f259ae9a80f4a13ef6354be426078d81ad0eb28e1",
+  "theorem_count": 68,
   "theorem_names": [
     "SoftwareIsQuantifiable.Coloring.and_eq_true",
     "SoftwareIsQuantifiable.Coloring.holds_eq_true",
@@ -161,10 +162,13 @@
     "SoftwareIsQuantifiable.Coverage.coverage_missing_iff",
     "SoftwareIsQuantifiable.Coverage.empty_roster_covered",
     "SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise",
+    "SoftwareIsQuantifiable.Coverage.audit_complete",
+    "SoftwareIsQuantifiable.Coverage.scoped_recorded_exact",
     "SoftwareIsQuantifiable.Finiteness.mem_listsOfLen",
     "SoftwareIsQuantifiable.Finiteness.mem_alphabet",
     "SoftwareIsQuantifiable.Finiteness.schedules_finite",
     "SoftwareIsQuantifiable.Finiteness.valid_orderings_finite",
+    "SoftwareIsQuantifiable.Finiteness.orderings_exact",
     "SoftwareIsQuantifiable.decide_false_of_not",
     "SoftwareIsQuantifiable.Fold.join_assoc",
     "SoftwareIsQuantifiable.Fold.join_comm",
@@ -193,7 +197,9 @@
     "SoftwareIsQuantifiable.Pareto.acceptsRelease_iff",
     "SoftwareIsQuantifiable.Pareto.weaklySeparated_sound",
     "SoftwareIsQuantifiable.Pareto.acceptsReplacement_iff",
-    "SoftwareIsQuantifiable.Pareto.replacement_no_regression"
+    "SoftwareIsQuantifiable.Pareto.replacement_no_regression",
+    "SoftwareIsQuantifiable.Pareto.separated_iff_all",
+    "SoftwareIsQuantifiable.Pareto.replacement_iff_all"
   ],
   "allowed_axioms": [
     "Classical.choice",
@@ -204,25 +210,25 @@
   "controls": [
     {
       "name": "unrecorded-witness",
-      "mutant_sha256": "48483753c4b83123c8dd1eec2af84f9b37a2001e45fb0bd4797c43520f902949",
+      "mutant_sha256": "cf6c3c52f5dacdb2898e51f0aa1b317b311a9d9230f7baff8e269646958510b0",
       "result": "rejected"
     },
     {
       "name": "missing-validator",
-      "mutant_sha256": "e8940fb806f3bfd47b444e8ef721c801de27640b465e08577ac6726fd758a657",
+      "mutant_sha256": "6d6653d0d1012b71d70d33328a998bedb0ccd49500796bad9e1382b85b6ff099",
       "result": "rejected"
     },
     {
       "name": "missing-compute-gate",
-      "mutant_sha256": "21e5c7276a7c31ecd1378e02dba85856c46006db54f6108b23c8a9903286918f",
+      "mutant_sha256": "8efaca4c60253f12c5e53a921654a8f2171465aebe59081e4c0f100c1e62fcef",
       "result": "rejected"
     },
     {
       "name": "missing-behavior-gate",
-      "mutant_sha256": "5089c9c5eb72076eec5cd7dd4e0f291b1ef3100ac102151468ed1f6917cc8a34",
+      "mutant_sha256": "fde2b145235b654c8ee1f5ee60d4a0d9791c477759a44a9c8b3e19f9fdf20754",
       "result": "rejected"
     }
   ],
   "status": "passed",
-  "finished_at": "2026-11-18T09:16:59.636157+00:00"
+  "finished_at": "2026-11-18T09:41:57.347949+00:00"
 }

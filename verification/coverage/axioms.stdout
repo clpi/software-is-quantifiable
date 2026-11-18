@@ -28,10 +28,13 @@
 'SoftwareIsQuantifiable.Coverage.coverage_missing_iff' depends on axioms: [propext, Quot.sound]
 'SoftwareIsQuantifiable.Coverage.empty_roster_covered' does not depend on any axioms
 'SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Coverage.audit_complete' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Coverage.scoped_recorded_exact' depends on axioms: [propext, Quot.sound]
 'SoftwareIsQuantifiable.Finiteness.mem_listsOfLen' depends on axioms: [propext, Classical.choice, Quot.sound]
 'SoftwareIsQuantifiable.Finiteness.mem_alphabet' depends on axioms: [propext, Quot.sound]
 'SoftwareIsQuantifiable.Finiteness.schedules_finite' depends on axioms: [propext, Classical.choice, Quot.sound]
 'SoftwareIsQuantifiable.Finiteness.valid_orderings_finite' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SoftwareIsQuantifiable.Finiteness.orderings_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
 'SoftwareIsQuantifiable.decide_false_of_not' does not depend on any axioms
 'SoftwareIsQuantifiable.Fold.join_assoc' depends on axioms: [Quot.sound]
 'SoftwareIsQuantifiable.Fold.join_comm' depends on axioms: [Quot.sound]
@@ -61,3 +64,5 @@
 'SoftwareIsQuantifiable.Pareto.weaklySeparated_sound' depends on axioms: [propext, Quot.sound]
 'SoftwareIsQuantifiable.Pareto.acceptsReplacement_iff' depends on axioms: [propext, Quot.sound]
 'SoftwareIsQuantifiable.Pareto.replacement_no_regression' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.separated_iff_all' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.replacement_iff_all' depends on axioms: [propext, Quot.sound]

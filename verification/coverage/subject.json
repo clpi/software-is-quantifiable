@@ -1,0 +1,13 @@
+{
+  "lean_version": "Lean (version 4.15.0, x86_64-unknown-linux-gnu, commit 11651562caae, Release)",
+  "sources": {
+    "SoftwareIsQuantifiable/Coloring.lean": "6e54ed8c7a3e927b636501675931a131b867abaae5b8706fd7a3708c5f3b3fa6",
+    "SoftwareIsQuantifiable/Coverage.lean": "5caa76b8ba35b2979198c95f8af382840e933caf2cb321e7128bd24ce50018a9",
+    "SoftwareIsQuantifiable/Finiteness.lean": "cd2b7fc97cf61b68c86efc0f3d81d9eb1e766d9ab313f4690663fcb5642b30bc",
+    "SoftwareIsQuantifiable/Fold.lean": "93a764ea2c26f49227c0c1b557750c81c98b44f14d5f1b5e07f475df47d651c8",
+    "SoftwareIsQuantifiable/Pareto.lean": "69665ce0db0383708ec7f2166e9798b84b669b4de639e0ef3c133fb7ec199e73",
+    "SoftwareIsQuantifiable.lean": "53b3a207bdb18ce34192da37fcde9aaa04c7e6a1a8627e70a59ef0c367056812",
+    "lakefile.lean": "c37338fd852ab251493663a094e9326812e81eab24507a6b059336aa6a3caf1f",
+    "verification/ParetoControls.lean": "60ad9aaf425aef9b87ee689eff17bbd42aeda95aa29640bd37d0d299354a4dad"
+  }
+}

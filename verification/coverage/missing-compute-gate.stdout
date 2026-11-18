@@ -1,5 +1,5 @@
 false
-/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-compute-gate.lean:298:60: error: unsolved goals
+/workspace/scratch/9752059aa620/evidence/quant-final-replay/missing-compute-gate.lean:298:60: error: unsolved goals
 B Context : Type
 inst✝¹ : DecidableEq B
 inst✝ : DecidableEq Context
@@ -12,3 +12,5 @@ inc out : Point
 'SoftwareIsQuantifiable.Pareto.admitted_frontier_exists' depends on axioms: [propext, Classical.choice, Quot.sound]
 'SoftwareIsQuantifiable.Pareto.admitted_frontier_sound' depends on axioms: [propext]
 'SoftwareIsQuantifiable.Pareto.acceptsRelease_iff' depends on axioms: [propext, sorryAx, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.separated_iff_all' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.replacement_iff_all' depends on axioms: [propext, sorryAx, Quot.sound]

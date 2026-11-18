@@ -116,5 +116,30 @@ theorem valid_orderings_finite (q : Qualification Run Venue) :
   obtain ⟨L, hL⟩ := schedules_finite q
   exact ⟨L, fun s hs => hL s hs.1 hs.2.1⟩
 
+/-- A schedule assigning one venue to every run occurrence, including when
+    the same run name appears several times. Order is free. -/
+def orderings [DecidableEq Run] [DecidableEq Venue] (q : Qualification Run Venue) :=
+  (listsOfLen (alphabet q) q.runs.length).filter
+    (fun s => decide ((s.map Prod.fst).Perm q.runs))
+
+theorem orderings_exact [DecidableEq Run] [DecidableEq Venue]
+    (q : Qualification Run Venue) (s : Schedule Run Venue) :
+    s ∈ orderings q ↔ (s.map Prod.fst).Perm q.runs ∧ ∀ p ∈ s, p.2 ∈ q.venues := by
+  simp only [orderings, List.mem_filter, decide_eq_true_eq, mem_listsOfLen]
+  constructor
+  · rintro ⟨⟨_,h⟩,perm⟩
+    exact ⟨perm,fun p hp => (mem_alphabet.mp (h p hp)).2⟩
+  · rintro ⟨perm,venues⟩
+    refine ⟨⟨by simpa using perm.length_eq, ?_⟩,perm⟩
+    intro p hp
+    exact mem_alphabet.mpr ⟨perm.mem_iff.mp (List.mem_map.mpr ⟨p,hp,rfl⟩),venues p hp⟩
+
+private def repeated : Qualification Nat Nat := ⟨[0,0,1],[0]⟩
+private def wrongMultiplicity : Schedule Nat Nat := [(0,0),(1,0),(1,0)]
+example : Valid repeated wrongMultiplicity := by
+  simp [Valid,repeated,wrongMultiplicity]
+example : wrongMultiplicity ∉ orderings repeated := by decide
+
+#print axioms orderings_exact
 end Finiteness
 end SoftwareIsQuantifiable

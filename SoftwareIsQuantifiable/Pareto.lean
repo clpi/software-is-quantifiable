@@ -371,5 +371,42 @@ example : acceptsRelease "same-scope" "same-scope"
 #print axioms admitted_frontier_sound
 #print axioms acceptsRelease_iff
 
+/-- Exactly the robust dominance test for the full Cartesian product of the
+    two boxes. For a constrained joint distribution the corner pair might
+    be impossible and only the original sound direction applies. -/
+theorem separated_iff_all (ct cc it ic : Bounds) :
+    separated ct cc it ic ↔
+      ∀ x y, realizes ct cc x → realizes it ic y → dominates x y := by
+  constructor
+  · intro h x y hx hy
+    exact separated_sound h hx hy
+  · intro h
+    exact h (ct.hi,cc.hi) (it.lo,ic.lo)
+      ⟨ct.valid, Nat.le_refl _, cc.valid, Nat.le_refl _⟩
+      ⟨Nat.le_refl _, it.valid, Nat.le_refl _, ic.valid⟩
+
+/-- The interval replacement gate is complete for its matching context and
+    behavior criteria and the full Cartesian boxes on both cost axes. -/
+theorem replacement_iff_all {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (before after : Context) (required observed : List B) (ct cc it ic : Bounds) :
+    acceptsReplacement before after required observed ct cc it ic = true ↔
+      after = before ∧ (∀ b ∈ required, b ∈ observed) ∧
+      ∀ x y, realizes ct cc x → realizes it ic y → noWorse x y := by
+  rw [acceptsReplacement_iff]
+  apply and_congr_right
+  intro _
+  apply and_congr_right
+  intro _
+  constructor
+  · intro h x y hx hy
+    exact weaklySeparated_sound h hx hy
+  · intro h
+    exact h (ct.hi,cc.hi) (it.lo,ic.lo)
+      ⟨ct.valid, Nat.le_refl _, cc.valid, Nat.le_refl _⟩
+      ⟨Nat.le_refl _, it.valid, Nat.le_refl _, ic.valid⟩
+
+#print axioms separated_iff_all
+#print axioms replacement_iff_all
+
 end Pareto
 end SoftwareIsQuantifiable

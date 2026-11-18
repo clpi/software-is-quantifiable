@@ -29,10 +29,13 @@ import SoftwareIsQuantifiable
 #print axioms SoftwareIsQuantifiable.Coverage.coverage_missing_iff
 #print axioms SoftwareIsQuantifiable.Coverage.empty_roster_covered
 #print axioms SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise
+#print axioms SoftwareIsQuantifiable.Coverage.audit_complete
+#print axioms SoftwareIsQuantifiable.Coverage.scoped_recorded_exact
 #print axioms SoftwareIsQuantifiable.Finiteness.mem_listsOfLen
 #print axioms SoftwareIsQuantifiable.Finiteness.mem_alphabet
 #print axioms SoftwareIsQuantifiable.Finiteness.schedules_finite
 #print axioms SoftwareIsQuantifiable.Finiteness.valid_orderings_finite
+#print axioms SoftwareIsQuantifiable.Finiteness.orderings_exact
 #print axioms SoftwareIsQuantifiable.decide_false_of_not
 #print axioms SoftwareIsQuantifiable.Fold.join_assoc
 #print axioms SoftwareIsQuantifiable.Fold.join_comm
@@ -62,3 +65,5 @@ import SoftwareIsQuantifiable
 #print axioms SoftwareIsQuantifiable.Pareto.weaklySeparated_sound
 #print axioms SoftwareIsQuantifiable.Pareto.acceptsReplacement_iff
 #print axioms SoftwareIsQuantifiable.Pareto.replacement_no_regression
+#print axioms SoftwareIsQuantifiable.Pareto.separated_iff_all
+#print axioms SoftwareIsQuantifiable.Pareto.replacement_iff_all

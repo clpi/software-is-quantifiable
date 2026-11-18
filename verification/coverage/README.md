@@ -1,9 +1,9 @@
 # Scoped coverage and interval admission verification
 
 This directory preserves the completed verification of the combined source
-based on `a1d84c603906edfbf34dd117e5bd5de986db3940`. The exact compiled files and
+based on `ba27febf48c85bccaaccbace7cc3faba5eff879c`. The exact compiled files and
 their SHA-256 digests are listed in [record.json](record.json). Its SHA-256 is
-`2e05339a2ebbe6070ef408552296b9a3e26e1e408b06141f383585637461ab60`.
+`00f1fd053ed532a520420d1afeae9284f47d7ebb747df09f0f9684b21c6b9d01`.
 
 The record retains the original commands, absolute paths, timestamps, exit
 codes, and stdout/stderr hashes. Paths describe the recorded run; moving the
@@ -14,7 +14,7 @@ logs into this repository does not relabel it as a later execution.
 - Clean `lake --wfail build`: exit 0, no warnings.
 - Upstream `verification/ParetoControls.lean`: exit 0; eight executable guards
   and four proof controls retained unchanged.
-- All 63 declared theorems audited through `#print axioms`: exit 0. Dependencies
+- All 68 declared theorems audited through `#print axioms`: exit 0. Dependencies
   are limited to `propext`, `Classical.choice`, and `Quot.sound`.
 - Four damaged-definition controls: each rejected with exit 1 and a proof
   error. They fabricate recorded coverage, bypass witness validation, remove
@@ -41,9 +41,7 @@ python3 verification/coverage/verify.py \
 The portable replayer runs the recorded verification sequence, first checking
 the source digests and compiler version against the committed subject. It
 writes a fresh receipt and logs to the separate output directory, retaining
-the committed evidence unchanged. The recorded run used the same verification
-sequence before this portable path interface was packaged; no additional
-execution is claimed for the packaging change.
+the committed evidence unchanged. The replay checks the current sources against the pinned source manifest in `subject.json`.
 
 This evidence checks the formal source and its stated premises. Actual
 roster membership, witness authenticity, behavior interpretation,

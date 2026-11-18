@@ -54,14 +54,14 @@ and 4.19.0. See [reproduction and evidence](verification/pareto-repair.md).
 
 ### Integrated coverage and interval verification (2026-11-18)
 
-This change builds on `a1d84c603906edfbf34dd117e5bd5de986db3940`, retaining
+This verification builds on `ba27febf48c85bccaaccbace7cc3faba5eff879c`, retaining
 the validated-ledger/roster owner and the incumbent-guarded release gate.
 The final source was checked with the complete official Lean 4.15.0 Linux
 toolchain, compiler commit `11651562caae`:
 
 * `lake clean` followed by `lake --wfail build`: all five modules and root,
   exit 0, no warnings.
-* All 63 declared theorems audited with `#print axioms`: exit 0; dependencies
+* All 68 declared theorems audited with `#print axioms`: exit 0; dependencies
   limited to `propext`, `Classical.choice`, and `Quot.sound`.
 * The unchanged upstream eight executable guards and four proof controls:
   exit 0 with `-DwarningAsError=true`.
@@ -72,7 +72,7 @@ toolchain, compiler commit `11651562caae`:
 The [portable replayer and raw evidence](verification/coverage/README.md)
 are committed with the source. The final
 [record.json](verification/coverage/record.json) SHA-256 is
-`2e05339a2ebbe6070ef408552296b9a3e26e1e408b06141f383585637461ab60`.
+`00f1fd053ed532a520420d1afeae9284f47d7ebb747df09f0f9684b21c6b9d01`.
 
 ## The claims and their verdicts
 
@@ -165,3 +165,11 @@ completeness, physical mediation, or the truth of an unvalidated observation.
   stated in the table — never silently weakened.
 * The build evidence (command, exit state, theorem inventory) is
   recorded in the lane record that accompanies this repository.
+
+## Exact admission and counterexamples
+
+* `Finiteness.orderings_exact` characterizes the output of an executable schedule filter in both directions. It preserves run multiplicities and assigns every occurrence to an allowed venue. With runs [A,A,B], the earlier distinct-name coverage predicate also accepts [A,B,B]. The new filter rejects it. Applications that distinguish separate invocations must name them separately.
+* `Coverage.scoped_recorded_exact` checks the scope before the existing ledger lookup. Two scopes may use the same execution ID. `Coverage.audit_complete` gives an exact audit of actual occurrences when an independent manifest enumerates precisely those occurrences. An empty or incomplete manifest can conceal a lost record.
+* `Pareto.separated_iff_all` and `replacement_iff_all` establish the converse of the interval guarantees. The extremal corner pair witnesses necessity for independent rectangular boxes. The existing release gate retains its context and behavior requirements. A workload that couples the realizations can exclude that corner pair.
+
+Build the default Lake target with the pinned Lean 4.15.0 toolchain. The added results also compile with Lean 4.19.0.

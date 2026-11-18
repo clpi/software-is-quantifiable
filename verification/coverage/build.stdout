@@ -1,9 +1,12 @@
 ✔ [2/8] Built SoftwareIsQuantifiable.Fold
-✔ [3/8] Built SoftwareIsQuantifiable.Finiteness
+ℹ [3/8] Built SoftwareIsQuantifiable.Finiteness
+info: ././././SoftwareIsQuantifiable/Finiteness.lean:143:0: 'SoftwareIsQuantifiable.Finiteness.orderings_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
 ℹ [4/8] Built SoftwareIsQuantifiable.Coverage
 info: ././././SoftwareIsQuantifiable/Coverage.lean:166:0: 'SoftwareIsQuantifiable.Coverage.recorded_exact' depends on axioms: [propext, Quot.sound]
 info: ././././SoftwareIsQuantifiable/Coverage.lean:167:0: 'SoftwareIsQuantifiable.Coverage.missing_exact' depends on axioms: [propext, Quot.sound]
 info: ././././SoftwareIsQuantifiable/Coverage.lean:168:0: 'SoftwareIsQuantifiable.Coverage.missing_append' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:198:0: 'SoftwareIsQuantifiable.Coverage.audit_complete' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:199:0: 'SoftwareIsQuantifiable.Coverage.scoped_recorded_exact' depends on axioms: [propext, Quot.sound]
 ✔ [5/8] Built SoftwareIsQuantifiable.Coloring
 ℹ [6/8] Built SoftwareIsQuantifiable.Pareto
 info: ././././SoftwareIsQuantifiable/Pareto.lean:241:0: false
@@ -11,5 +14,7 @@ info: ././././SoftwareIsQuantifiable/Pareto.lean:369:0: 'SoftwareIsQuantifiable.
 info: ././././SoftwareIsQuantifiable/Pareto.lean:370:0: 'SoftwareIsQuantifiable.Pareto.admitted_frontier_exists' depends on axioms: [propext, Classical.choice, Quot.sound]
 info: ././././SoftwareIsQuantifiable/Pareto.lean:371:0: 'SoftwareIsQuantifiable.Pareto.admitted_frontier_sound' depends on axioms: [propext]
 info: ././././SoftwareIsQuantifiable/Pareto.lean:372:0: 'SoftwareIsQuantifiable.Pareto.acceptsRelease_iff' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Pareto.lean:408:0: 'SoftwareIsQuantifiable.Pareto.separated_iff_all' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Pareto.lean:409:0: 'SoftwareIsQuantifiable.Pareto.replacement_iff_all' depends on axioms: [propext, Quot.sound]
 ✔ [7/8] Built SoftwareIsQuantifiable
 Build completed successfully.
