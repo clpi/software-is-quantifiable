@@ -1,16 +1,9 @@
 /-
   Claim 5 — Coverage universality (spec §19).
 
-  Status: PREMISE. The spec itself states this claim as an argument
-  at the level of the protection model, standing on three named
-  assumptions (§19.4), with an exact falsification condition (§19.5).
-  It is not a theorem of the mathematics, and this module does not
-  pretend otherwise: the mediation premise appears as an explicitly
-  named field of `PlatformPremise`, every coverage statement takes
-  that premise as an argument, and no theorem in this repository
-  derives coverage without it. The Lean content is the dependency
-  discipline itself — the premise cannot be smuggled, because the
-  type of every coverage theorem names it.
+  Coverage of real executions is a platform premise. The legacy Witnessed
+  predicate tests only an ID. The recorded and missing functions below
+  require membership in an actual ledger and a supplied validator.
 -/
 
 namespace SoftwareIsQuantifiable
@@ -63,10 +56,7 @@ theorem coverage (P : PlatformPremise) :
     ∀ e : Execution, ∃ w : Witness, Witnessed e w :=
   P.mediated
 
-/-- The falsification condition (§19.5), stated exactly: coverage
-    fails if and only if some execution is unwitnessed. Exhibiting
-    one such execution on a named platform falsifies the premise
-    for that platform — and, per the spec, nothing else. -/
+/-- Logical dual of unrestricted existence under the legacy predicate. -/
 theorem coverage_iff (P : PlatformPremise) :
     (∀ e : Execution, ∃ w : Witness, Witnessed e w) ↔
     ¬ ∃ e : Execution, ∀ w : Witness, ¬ Witnessed e w := by

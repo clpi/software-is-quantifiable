@@ -42,6 +42,16 @@ is passed as an argument, exactly as the PREMISE verdict
 requires. On a complete toolchain the same tree builds with
 `lake build` unchanged.
 
+### Pareto correction verification (2026-11-18)
+
+The complete repository now passes `lake build` with its unchanged
+Lean 4.15.0 pin. Existing unused-variable/section-variable warnings
+remain in Fold, Coloring, and Coverage; they are not proof failures.
+The changed Pareto module also passes separately with
+`-DwarningAsError=true`. Independent review checked it and eight
+executable guards plus four proof controls under both Lean 4.15.0
+and 4.19.0. See [reproduction and evidence](verification/pareto-repair.md).
+
 ## The claims and their verdicts
 
 | # | Claim (spec source) | Lean form | Status |
@@ -49,9 +59,9 @@ requires. On a complete toolchain the same tree builds with
 | 1 | Finiteness: a qualification — named software, named criteria, the behavior intended under them — forms a finite problem space (§20.0 presentation lemma, §20.1) | `Finiteness.schedules_finite`, `Finiteness.valid_orderings_finite`: a qualification's runs and venues are lists by construction, and an explicit finite list enumerates every schedule / valid ordering over them | PROVEN |
 | 2 | Fold correctness: the witness join is a semi-lattice, so the accounting fold is order- and duplication-independent and exactly recomputable (§17.4, §17.8, §22.D) | `Fold.join_assoc`, `Fold.join_comm`, `Fold.join_idem`, `Fold.account_eq_true_iff`, `Fold.account_ext`, `Fold.account_perm`, `Fold.account_append_self`, `Fold.account_append` | PROVEN |
 | 3 | Coloring: relative to a named snapshot, the coloring computed as a least fixed point over ground Horn rules is sound and complete, and the iteration terminates (§5, §16.8, §20) | `Coloring.exists_fixed_point` (a fixed point is reached within `U.length` steps), `Coloring.coloring_fixed`, `Coloring.coloring_sound`, `Coloring.coloring_complete` | PROVEN, under one stated side condition: the snapshot's universe names every conclusion the rules can produce — that is what makes the snapshot a snapshot |
-| 4 | Pareto: the computed ordering is Pareto optimal, never worse than the incumbent, regression-free (§20.1, §20.2, §21.3) | `Pareto.separated_sound` (separation under interval bounds decides dominance for every realization), `Pareto.frontier_nonempty`, `Pareto.frontier_not_dominated`, `Pareto.separated_of_refined` (refinement is monotone), `Pareto.accepts_iff` (the regression gate accepts exactly the candidates that drop no qualified behavior) | PROVEN at the level of bounds, which is the level the spec claims |
-| 4′ | Per-execution dominance: a dominated schedule finishes worse on every single execution | `Pareto.not_per_execution_dominance`: concrete counterexample (bounds [1, 100] against [2, 3]; the dominated schedule can realize 1 against 3) | DISPROVEN — the spec itself names this boundary at §20.4; dominance is a statement about bounds, never about one execution |
-| 5 | Coverage universality: every execution crosses the kernel boundary, hence is witnessed (§19) | `Coverage.coverage`, conditional on `Coverage.PlatformPremise` | PREMISE — assumed, named, never counted as proven. The spec states this as a protection-model argument on three named assumptions (§19.4) with an exact falsification condition (§19.5, `Coverage.coverage_iff`). The mathematics adds nothing here and this repository says so: every coverage theorem takes the premise as an argument, so it cannot be smuggled in as a theorem |
+| 4 | Pareto selection and no-regression admission | `Pareto.frontier_nonempty` preserves the unrestricted trade-off frontier; `Pareto.frontier_can_regress` shows that frontier membership alone permits incomparable regressions. `Pareto.admitted_frontier_exists` and `Pareto.admitted_frontier_sound` add incumbent-guarded selection: no worse on either existing axis and nondominated among the original candidates. `Pareto.acceptsRelease_iff` checks identical measurement context, qualified-behavior inclusion, and componentwise non-regression. | PROVEN at model level, under the stated scope and baseline-retention premises; measurements and behavior certificates remain scoped inputs |
+| 4′ | Overlapping intervals alone guarantee per-execution dominance | `Pareto.not_per_execution_dominance`: bounds [1, 100] against [2, 3] permit realizations 1 against 3 | DISPROVEN for overlapping intervals. This does not refute `separated_sound`, which proves dominance for every pair of in-bound realizations when its separation premise holds |
+| 5 | Coverage of real executions (§19) | `Coverage.coverage`, `Coverage.unrestricted_witness`, `Coverage.recorded_exact`, `Coverage.missing_exact` | PREMISE for physical mediation. The legacy ID predicate has a constructed witness for every execution. The ledger checker proves exactly which named executions have an accepted record. |
 
 ## Coverage against an actual ledger
 
@@ -89,8 +99,9 @@ Lean 4.15.0 and 4.19.0. The package remains pinned to 4.15.0.
   termination by a counting argument over the universe; soundness
   and completeness against an inductive derivability relation.
 * `SoftwareIsQuantifiable/Pareto.lean` — claim 4 and the disproof
-  4′. Interval cost bounds on two axes; separation; the frontier;
-  monotone refinement; the regression gate.
+  4′. Interval cost bounds on two axes; separation; the exploratory
+  frontier; monotone refinement; guarded no-regression selection and
+  combined release admission.
 * `SoftwareIsQuantifiable/Coverage.lean` — claim 5, as a premise
   with its falsification condition.
 
