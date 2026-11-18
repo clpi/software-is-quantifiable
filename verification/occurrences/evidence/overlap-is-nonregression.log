@@ -1,0 +1,3 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/overlap-is-nonregression.lean:3:45: error: tactic 'decide' proved that the proposition
+  Pareto.noWorse (18, 0) (10, 0)
+is false

@@ -1,0 +1,5 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/invalid-witness.lean:3:111: error: tactic 'decide' proved that the proposition
+  Coverage.recorded (fun w => decide (0 < w.events)) (Coverage.inScope 2 [(2, { exec := 7, events := 0 })])
+      { id := 7 } =
+    true
+is false

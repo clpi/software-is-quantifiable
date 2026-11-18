@@ -175,8 +175,9 @@ theorem empty_ledger_has_no_platform_premise (valid : Witness → Bool)
 #print axioms empty_ledger_has_no_platform_premise
 #print axioms unrestricted_witness
 
-/-- A successful audit covers real occurrences when the independently supplied
-    manifest contains exactly the occurred executions. -/
+/-- A successful audit covers actual execution handles when the independently
+    supplied manifest contains exactly those handles. Distinct physical
+    occurrences need distinct admitted handles; multiplicity is not checked. -/
 theorem audit_complete (occurred : Execution → Prop) (valid : Witness → Bool)
     (ledger : List Witness) (roster : List Execution) (manifest : ∀ e, occurred e ↔ e ∈ roster) :
     missing valid ledger roster = [] ↔ ∀ e, occurred e → recorded valid ledger e = true := by
@@ -184,7 +185,9 @@ theorem audit_complete (occurred : Execution → Prop) (valid : Witness → Bool
   simp only [manifest]
 
 /-- Project one named scope before invoking the existing ID-based checker.
-    A record for the same local ID in a different scope cannot supply evidence. -/
+    A record for the same local ID in a different scope cannot supply evidence.
+    Scope labels and their binding to witnesses need independent authentication;
+    filtering caller-supplied labels does not establish that binding. -/
 def inScope (scope : Nat) (rows : List (Nat × Witness)) : List Witness :=
   (rows.filter (fun row => decide (row.1 = scope))).map Prod.snd
 

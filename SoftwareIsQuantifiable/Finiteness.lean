@@ -349,8 +349,9 @@ theorem mem_composites {R1 V1 R2 V2 : Type}
     rcases h with ⟨s1, hs1, s2, hs2, he⟩
     exact ⟨s1, hs1, s2, hs2, he.symm⟩
 
-/-- A schedule assigning one venue to every run occurrence, including when
-    the same run name appears several times. Order is free. -/
+/-- A schedule preserving the multiplicity of every run value and assigning
+    each entry an allowed venue. Distinct invocations require distinct run
+    identities at ingress; repeated equal values carry no separate lineage. -/
 def orderings [DecidableEq Run] [DecidableEq Venue] (q : Qualification Run Venue) :=
   (listsOfLen (alphabet q) q.runs.length).filter
     (fun s => decide ((s.map Prod.fst).Perm q.runs))
@@ -367,6 +368,36 @@ theorem orderings_exact [DecidableEq Run] [DecidableEq Venue]
     intro p hp
     exact mem_alphabet.mpr ⟨perm.mem_iff.mp (List.mem_map.mpr ⟨p,hp,rfl⟩),venues p hp⟩
 
+/-- Multiplicity-preserving schedules refine the existing distinct-name
+    coverage contract, so old consumers can use the stronger producer. -/
+theorem orderings_valid [DecidableEq Run] [DecidableEq Venue]
+    {q : Qualification Run Venue} {s : Schedule Run Venue}
+    (hs : s ∈ orderings q) : Valid q s := by
+  obtain ⟨perm, venues⟩ := (orderings_exact q s).mp hs
+  refine ⟨by simpa using perm.length_eq, ?_, ?_⟩
+  · intro p hp
+    exact ⟨perm.mem_iff.mp (List.mem_map.mpr ⟨p, hp, rfl⟩), venues p hp⟩
+  · intro r hr
+    rcases List.mem_map.mp (perm.mem_iff.mpr hr) with ⟨⟨r', v⟩, hp, he⟩
+    cases he
+    exact ⟨v, venues (r', v) hp, hp⟩
+
+/-- The existing tagged composition preserves multiplicity on both sides. -/
+theorem combine_orderings {R1 V1 R2 V2 : Type}
+    [DecidableEq R1] [DecidableEq V1] [DecidableEq R2] [DecidableEq V2]
+    {q1 : Qualification R1 V1} {q2 : Qualification R2 V2}
+    {s1 : Schedule R1 V1} {s2 : Schedule R2 V2}
+    (h1 : s1 ∈ orderings q1) (h2 : s2 ∈ orderings q2) :
+    combineSched s1 s2 ∈ orderings (product q1 q2) := by
+  apply (orderings_exact _ _).mpr
+  have p1 := ((orderings_exact q1 s1).mp h1).1
+  have p2 := ((orderings_exact q2 s2).mp h2).1
+  refine ⟨?_, ?_⟩
+  · simpa [combineSched, tagLeft, tagRight, product, List.map_map,
+      Function.comp_def] using (p1.map Sum.inl).append (p2.map Sum.inr)
+  · intro p hp
+    exact ((combine_valid (orderings_valid h1) (orderings_valid h2)).2.1 p hp).2
+
 private def repeated : Qualification Nat Nat := ⟨[0,0,1],[0]⟩
 private def wrongMultiplicity : Schedule Nat Nat := [(0,0),(1,0),(1,0)]
 example : Valid repeated wrongMultiplicity := by
@@ -374,5 +405,7 @@ example : Valid repeated wrongMultiplicity := by
 example : wrongMultiplicity ∉ orderings repeated := by decide
 
 #print axioms orderings_exact
+#print axioms orderings_valid
+#print axioms combine_orderings
 end Finiteness
 end SoftwareIsQuantifiable

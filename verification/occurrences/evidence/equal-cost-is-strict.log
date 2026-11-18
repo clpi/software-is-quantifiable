@@ -1,0 +1,3 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/equal-cost-is-strict.lean:3:45: error: tactic 'decide' proved that the proposition
+  Pareto.dominates (0, 0) (0, 0)
+is false

@@ -1,0 +1,11 @@
+--- Identifiable.lean
++++ Identifiable.lean
+@@ -41,7 +41,7 @@
+     simp [total,shifted,Path.stay,missing] at impossible
+   · exact fun path p q => path_determines path p q
+ 
+-def observed (a b : Nat) := (a = 0 ∧ b = 100) ∨ (a = 55 ∧ b = 100)
++def observed (a b : Nat) := (a = 0 ∧ b = 100) ∨ (a = 56 ∧ b = 100)
+ theorem hidden_prefix : Path observed 0 55 :=
+   (Path.edge (Or.inl ⟨rfl,rfl⟩)).join (.reverse (.edge (Or.inr ⟨rfl,rfl⟩)))
+ 
