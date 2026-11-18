@@ -1,0 +1,3 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/complete/duplicate-run-branch.lean:3:114: error: tactic 'decide' proved that the proposition
+  (Finiteness.orderings { runs := List.replicate 12 0, venues := [0] }).length = 12
+is false

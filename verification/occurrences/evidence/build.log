@@ -8,13 +8,18 @@ info: ././././SoftwareIsQuantifiable/Coverage.lean:173:0: 'SoftwareIsQuantifiabl
 info: ././././SoftwareIsQuantifiable/Coverage.lean:174:0: 'SoftwareIsQuantifiable.Coverage.empty_roster_covered' does not depend on any axioms
 info: ././././SoftwareIsQuantifiable/Coverage.lean:175:0: 'SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise' depends on axioms: [propext, Quot.sound]
 info: ././././SoftwareIsQuantifiable/Coverage.lean:176:0: 'SoftwareIsQuantifiable.Coverage.unrestricted_witness' does not depend on any axioms
-info: ././././SoftwareIsQuantifiable/Coverage.lean:209:0: 'SoftwareIsQuantifiable.Coverage.audit_complete' depends on axioms: [propext, Quot.sound]
-info: ././././SoftwareIsQuantifiable/Coverage.lean:210:0: 'SoftwareIsQuantifiable.Coverage.scoped_recorded_exact' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:260:0: 'SoftwareIsQuantifiable.Coverage.audit_complete' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:261:0: 'SoftwareIsQuantifiable.Coverage.scoped_recorded_exact' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:262:0: 'SoftwareIsQuantifiable.Coverage.scoped_missing_exact' depends on axioms: [propext, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:263:0: 'SoftwareIsQuantifiable.Coverage.scoped_coverage_missing_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:264:0: 'SoftwareIsQuantifiable.Coverage.scoped_audit_complete' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Coverage.lean:265:0: 'SoftwareIsQuantifiable.Coverage.scoped_platform_coverage' depends on axioms: [propext, Quot.sound]
 ✔ [4/10] Built SoftwareIsQuantifiable.Coloring
 ℹ [5/10] Built SoftwareIsQuantifiable.Finiteness
-info: ././././SoftwareIsQuantifiable/Finiteness.lean:407:0: 'SoftwareIsQuantifiable.Finiteness.orderings_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
-info: ././././SoftwareIsQuantifiable/Finiteness.lean:408:0: 'SoftwareIsQuantifiable.Finiteness.orderings_valid' depends on axioms: [propext, Classical.choice, Quot.sound]
-info: ././././SoftwareIsQuantifiable/Finiteness.lean:409:0: 'SoftwareIsQuantifiable.Finiteness.combine_orderings' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Finiteness.lean:483:0: 'SoftwareIsQuantifiable.Finiteness.orderings_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Finiteness.lean:484:0: 'SoftwareIsQuantifiable.Finiteness.orderings_reference_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Finiteness.lean:485:0: 'SoftwareIsQuantifiable.Finiteness.orderings_valid' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ././././SoftwareIsQuantifiable/Finiteness.lean:486:0: 'SoftwareIsQuantifiable.Finiteness.combine_orderings' depends on axioms: [propext, Classical.choice, Quot.sound]
 ℹ [6/10] Built SoftwareIsQuantifiable.Interface
 info: ././././SoftwareIsQuantifiable/Interface.lean:1112:0: 'SoftwareIsQuantifiable.Interface.noWorse_refl' depends on axioms: [propext, Classical.choice, Quot.sound]
 info: ././././SoftwareIsQuantifiable/Interface.lean:1113:0: 'SoftwareIsQuantifiable.Interface.noWorse_trans' does not depend on any axioms

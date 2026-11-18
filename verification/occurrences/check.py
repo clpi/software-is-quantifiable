@@ -91,6 +91,8 @@ try:
             '[(0,0),(1,0),(1,0)] ∈ Finiteness.orderings (⟨[0,0,1],[0]⟩ : Finiteness.Qualification Nat Nat)',
         'wrong-scope':
             'Coverage.recorded (fun _ => true) (Coverage.inScope 1 [(2,⟨7,1⟩)]) ⟨7⟩ = true',
+        'mixed-scope-is-complete':
+            '(Coverage.scopedMissing (fun _ _ => true) [(2,⟨7,1⟩)] [(1,⟨7⟩),(2,⟨7⟩)]).length = 0',
         'invalid-witness':
             'Coverage.recorded (fun w => decide (0 < w.events)) (Coverage.inScope 2 [(2,⟨7,0⟩)]) ⟨7⟩ = true',
         'empty-manifest-is-coverage':
@@ -100,6 +102,8 @@ try:
             'Pareto.acceptsReplacement "same" "same" ({ qualified := [1,2] } : Pareto.PriorQualification Nat) { offered := [1] } ⟨0,0,by decide⟩ ⟨0,0,by decide⟩ ⟨0,0,by decide⟩ ⟨0,0,by decide⟩ = true',
         'equal-cost-is-strict':
             'Pareto.dominates (0,0) (0,0)',
+        'duplicate-run-branch':
+            '(Finiteness.orderings (⟨List.replicate 12 0,[0]⟩ : Finiteness.Qualification Nat Nat)).length = 12',
     }
     record['refusals'] = []
     for name, claim in false_claims.items():

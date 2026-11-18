@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-18T11:13:22.646685+00:00",
+  "started_at": "2026-11-18T11:19:25.058450+00:00",
   "commands": [
     {
       "name": "version",
@@ -30,7 +30,7 @@
       ],
       "exit_code": 0,
       "expected_exit": 0,
-      "log_sha256": "7b461c542bff6d377fee3aa97cc44049e540f9cd9e6e602c5123746dac1f2df9"
+      "log_sha256": "fc76fbaefa32cb8145ad576f9ddb653757255f290a7dc01e53b7922587dff080"
     },
     {
       "name": "upstream-controls",
@@ -75,11 +75,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/Axioms.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/Axioms.lean"
       ],
       "exit_code": 0,
       "expected_exit": 0,
-      "log_sha256": "b5869ad48301db7245533a82928959128c3abe26148db666dcd279c1f2adf1ea"
+      "log_sha256": "07d4049ed977ef5e9866b6bda552a1da300107a392c1f5d484a1afbd7ec39d95"
     },
     {
       "name": "substituted-multiplicity",
@@ -88,11 +88,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/substituted-multiplicity.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/substituted-multiplicity.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "375b49b1ca64c5e25532c754779d1eb0f3850545e6584e1b8f43c8d0dcafc484"
+      "log_sha256": "6b85e5919029e5d1ccb814e4b4d248af619044b094b851ada1a26297a02d52e0"
     },
     {
       "name": "wrong-scope",
@@ -101,11 +101,24 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/wrong-scope.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/wrong-scope.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "5ea1e8296ca7235f950468e343f01c9ff0a536e952ca54074c53a447a16e4b9d"
+      "log_sha256": "da092d9b909a6c401236908a1d92000bab6426c0fb4e34d0e4365467c978baaa"
+    },
+    {
+      "name": "mixed-scope-is-complete",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
+        "-DwarningAsError=true",
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/mixed-scope-is-complete.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "log_sha256": "513f12b5c143bc79d88ed1b6c2c4dec5a84a931ab5724e0d471bdccdf7bfbae4"
     },
     {
       "name": "invalid-witness",
@@ -114,11 +127,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/invalid-witness.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/invalid-witness.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "7ecac90eaabe53c8cd8a88f29d8acce18847dba95173a7430c788e7ecbcb64aa"
+      "log_sha256": "5ca5ea35319c4a98a8fceb8fb899d1a3fcb25da611f6addf9fdaea6f954888e5"
     },
     {
       "name": "empty-manifest-is-coverage",
@@ -127,11 +140,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/empty-manifest-is-coverage.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/empty-manifest-is-coverage.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "b509765736137dc261ef17160be57dd330beb9f2700f29fa59f5f02fb3263125"
+      "log_sha256": "24a6d817181e9526b392e6d779d408801e4af8cac40602becbdd24a488daa0a6"
     },
     {
       "name": "overlap-is-nonregression",
@@ -140,11 +153,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/overlap-is-nonregression.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/overlap-is-nonregression.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "41c2689ee84e354ed0d69349103973c44b579fae8796edcdf0324a1c4a6b088f"
+      "log_sha256": "1e40f194bd7f8793ddd21c12b1e1eeae82cb12fe30cda43805ea2ea331fec896"
     },
     {
       "name": "dropped-behavior",
@@ -153,11 +166,11 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/dropped-behavior.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/dropped-behavior.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "8a544c5cc9a17bef60452fc79f99bedcbb28d68786ef6827e62d0bfbe862d510"
+      "log_sha256": "c1adf73ca451c851b257b8d4d3d12dcd872ec921de6cc0113cd2539ce486b1c2"
     },
     {
       "name": "equal-cost-is-strict",
@@ -166,19 +179,32 @@
         "env",
         "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
         "-DwarningAsError=true",
-        "/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/equal-cost-is-strict.lean"
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/equal-cost-is-strict.lean"
       ],
       "exit_code": 1,
       "expected_exit": 1,
-      "log_sha256": "0cb9767b81674ae6b7ca926cd3c706f42bc1e4a95741753c8934a9b0ceef0435"
+      "log_sha256": "09c55e47f25fcaca0a602304c710c8aabf39086dd30530a08911ef5c3c5fbd9c"
+    },
+    {
+      "name": "duplicate-run-branch",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.19.0-linux/bin/lean",
+        "-DwarningAsError=true",
+        "/workspace/scratch/2364a114b51e/quantifiable-validation/complete/duplicate-run-branch.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "log_sha256": "6956ff475d9345ace3ef825ad3a1fbb5ff196ec7ba0d9951f9724dc05bb9e29e"
     }
   ],
   "lean_version": "Lean (version 4.19.0, x86_64-unknown-linux-gnu, commit 6caaee842e94, Release)",
   "lean_sha256": "92c3d35b5bfaa5e0fea413a775d504cf46cd95e1345df61c2274f76779e7e023",
   "sources": {
     "SoftwareIsQuantifiable/Coloring.lean": "736b668a988cd4e0992381a442f4213270d463442d3601845606de6a3a9321a0",
-    "SoftwareIsQuantifiable/Coverage.lean": "87d849e0167ffbae2aa8e923f79d26110374170fa235f6b350a938b1b11674fd",
-    "SoftwareIsQuantifiable/Finiteness.lean": "480e140da6342f5e022fe75708222cb789ab10ed1e894d1cf0693f82136a4bb2",
+    "SoftwareIsQuantifiable/Coverage.lean": "5f2299f0ba10eb1477a7aaaf87b791de872a5eef3cff877ebe0543238c9892a6",
+    "SoftwareIsQuantifiable/Finiteness.lean": "3b572b7f3dc8d7143db704e5a4cf690c2349df3f3cd10e0ed01a653bd68b659b",
     "SoftwareIsQuantifiable/Fold.lean": "e0e6df85309a922bc80deaa068b11f7c02248810dbb910ccf68d8009ebfa8d3b",
     "SoftwareIsQuantifiable/Instance.lean": "f2a9e4f0fd4be1335539f70d4d1f33c2a9c97f582a28f902aed646d5cd5af974",
     "SoftwareIsQuantifiable/Interface.lean": "715f96ff792ead977c711f0bec2d80e20d98b6125c670bdefe7e3450e87205af",
@@ -188,8 +214,8 @@
     "lean-toolchain": "55e97be96000b5e9e290c9e74482e5e317861499a5540353ce845471bded8cea",
     "lake-manifest.json": "f9dbff364d65356da00dd871706fa573a87e33ddce74b0046ae070e0e7b0fbdc",
     "verification/ParetoControls.lean": "657d8420c3a0cca34a5f98b8591dd3be3f55795d31e98210c56ff11677a6ca21",
-    "verification/occurrences/Controls.lean": "7778467fb42dbc4ae17330b7a752f41d9ba4c1edc29b45ce6d728b3fa4eba990",
-    "verification/occurrences/check.py": "2033a8bf651b6d952ce0e0b5e5008c993b4be9cb78efd862f532bf8684be8741",
+    "verification/occurrences/Controls.lean": "e4761ee4087cb2a546ab337f04dc94d2505d0894f6de732a876620c768b4263a",
+    "verification/occurrences/check.py": "cf1595e76f18599250b7b476e88535b62eb66675eaa2c870ad5f77f9c248c91e",
     "examples/LedgerRepair.lean": "caca091d9d82489a73fe10a01d22c5c8a49f78ccef6f1958a46c2cd9d19a56c3",
     "examples/README.md": "775234f9b0c320dc961cc6be9516a3a67fc2e2c76d2fbc2674f3c93974d3939e",
     "examples/check.sh": "a3e7ee2e5e07e614bca44448d405c1bec7a31726520461bbef8895f88d3dfaa8",
@@ -249,6 +275,10 @@
     "SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise",
     "SoftwareIsQuantifiable.Coverage.audit_complete",
     "SoftwareIsQuantifiable.Coverage.scoped_recorded_exact",
+    "SoftwareIsQuantifiable.Coverage.scoped_missing_exact",
+    "SoftwareIsQuantifiable.Coverage.scoped_coverage_missing_iff",
+    "SoftwareIsQuantifiable.Coverage.scoped_audit_complete",
+    "SoftwareIsQuantifiable.Coverage.scoped_platform_coverage",
     "SoftwareIsQuantifiable.Finiteness.mem_listsOfLen",
     "SoftwareIsQuantifiable.Finiteness.mem_alphabet",
     "SoftwareIsQuantifiable.Finiteness.schedules_finite",
@@ -262,7 +292,10 @@
     "SoftwareIsQuantifiable.Finiteness.combine_valid",
     "SoftwareIsQuantifiable.Finiteness.not_all_valid_side_respecting",
     "SoftwareIsQuantifiable.Finiteness.mem_composites",
+    "SoftwareIsQuantifiable.Finiteness.mem_choices",
+    "SoftwareIsQuantifiable.Finiteness.placements_exact",
     "SoftwareIsQuantifiable.Finiteness.orderings_exact",
+    "SoftwareIsQuantifiable.Finiteness.orderings_reference_exact",
     "SoftwareIsQuantifiable.Finiteness.orderings_valid",
     "SoftwareIsQuantifiable.Finiteness.combine_orderings",
     "SoftwareIsQuantifiable.decide_false_of_not",
@@ -410,6 +443,10 @@
       "source_sha256": "0b952315aaead5ac18bf91fc7fea104b18d961d9582c17a273be5205aa90a262"
     },
     {
+      "name": "mixed-scope-is-complete",
+      "source_sha256": "97cda5f2a8665520be8e03b2792568055b4ab4aff7ada17785e028f259d6b97b"
+    },
+    {
       "name": "invalid-witness",
       "source_sha256": "a1fdce930c27194404ba5f7aa71c5def98d7b457dd74456cee64f4c177e30777"
     },
@@ -428,9 +465,13 @@
     {
       "name": "equal-cost-is-strict",
       "source_sha256": "cbe78950709add0ea30111b8b4ee7e15bfc64dfeb190dc2c14ac2b1b421951e2"
+    },
+    {
+      "name": "duplicate-run-branch",
+      "source_sha256": "0485ecc81b8b4c96a72319da07fbae0b7a9b07d9fae2544b7f6c82b92668fcc9"
     }
   ],
   "unchanged_after_execution": true,
   "status": "passed",
-  "finished_at": "2026-11-18T11:13:44.365260+00:00"
+  "finished_at": "2026-11-18T11:19:47.691115+00:00"
 }

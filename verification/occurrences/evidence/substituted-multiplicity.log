@@ -1,3 +1,3 @@
-/workspace/scratch/2364a114b51e/quantifiable-validation/recorded/substituted-multiplicity.lean:3:110: error: tactic 'decide' proved that the proposition
+/workspace/scratch/2364a114b51e/quantifiable-validation/complete/substituted-multiplicity.lean:3:110: error: tactic 'decide' proved that the proposition
   [(0, 0), (1, 0), (1, 0)] ∈ Finiteness.orderings { runs := [0, 0, 1], venues := [0] }
 is false

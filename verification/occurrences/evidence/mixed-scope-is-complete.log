@@ -1,0 +1,5 @@
+/workspace/scratch/2364a114b51e/quantifiable-validation/complete/mixed-scope-is-complete.lean:3:100: error: tactic 'decide' proved that the proposition
+  (Coverage.scopedMissing (fun x x => true) [(2, { exec := 7, events := 1 })]
+        [(1, { id := 7 }), (2, { id := 7 })]).length =
+    0
+is false
