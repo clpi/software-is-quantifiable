@@ -77,6 +77,9 @@ theorem axisLe_trans_lt {p : Polarity} {a b c : Nat}
   | minimize => exact Nat.lt_of_le_of_lt hle hlt
   | maximize => exact Nat.lt_of_lt_of_le hlt hle
 
+theorem axisLt_le {p : Polarity} {a b : Nat} (h : axisLt p a b) : axisLe p a b := by
+  cases p <;> exact Nat.le_of_lt h
+
 def axisLeDec (p : Polarity) (a b : Nat) : Decidable (axisLe p a b) :=
   match p with
   | .minimize => inferInstanceAs (Decidable (a ≤ b))
@@ -114,9 +117,12 @@ def axesLe {Measure : Type} : MeasureSpace Measure → List Nat → List Nat →
   | _, _, _ => False
 
 /-- Componentwise strict improvement somewhere along a measure space.
-    A length mismatch is not a strict improvement. -/
+    Every coordinate is compared. A vector that does not cover the
+    space is not a strict improvement, even when an early coordinate is. -/
 def axesLt {Measure : Type} : MeasureSpace Measure → List Nat → List Nat → Prop
-  | ax :: axs, a :: as, b :: bs => axisLt ax.polarity a b ∨ axesLt axs as bs
+  | ax :: axs, a :: as, b :: bs =>
+      (axisLt ax.polarity a b ∧ axesLe axs as bs) ∨
+        (axisLe ax.polarity a b ∧ axesLt axs as bs)
   | _, _, _ => False
 
 def axesLeDec {Measure : Type} :
@@ -135,10 +141,24 @@ def axesLeDec {Measure : Type} :
 def axesLtDec {Measure : Type} :
     (sp : MeasureSpace Measure) → (a b : List Nat) → Decidable (axesLt sp a b)
   | ax :: axs, x :: xs, y :: ys =>
-      match axisLtDec ax.polarity x y, axesLtDec axs xs ys with
-      | isTrue h1, _ => isTrue (Or.inl h1)
-      | _, isTrue h2 => isTrue (Or.inr h2)
-      | isFalse h1, isFalse h2 => isFalse fun h => h.elim h1 h2
+      match axisLtDec ax.polarity x y with
+      | isTrue hlt =>
+          match axesLeDec axs xs ys with
+          | isTrue hle => isTrue (Or.inl ⟨hlt, hle⟩)
+          | isFalse hnle =>
+              match axisLeDec ax.polarity x y, axesLtDec axs xs ys with
+              | isTrue hleH, isTrue hltT => isTrue (Or.inr ⟨hleH, hltT⟩)
+              | isFalse hleH, _ =>
+                  isFalse fun h => h.elim (fun p => hnle p.2) (fun p => hleH p.1)
+              | _, isFalse hltT =>
+                  isFalse fun h => h.elim (fun p => hnle p.2) (fun p => hltT p.2)
+      | isFalse hnlt =>
+          match axisLeDec ax.polarity x y, axesLtDec axs xs ys with
+          | isTrue hleH, isTrue hltT => isTrue (Or.inr ⟨hleH, hltT⟩)
+          | isFalse hleH, _ =>
+              isFalse fun h => h.elim (fun p => hnlt p.1) (fun p => hleH p.1)
+          | _, isFalse hltT =>
+              isFalse fun h => h.elim (fun p => hnlt p.1) (fun p => hltT p.2)
   | [], _, _ => isFalse fun h => h
   | _ :: _, [], _ => isFalse fun h => h
   | _ :: _, _ :: _, [] => isFalse fun h => h
@@ -256,6 +276,26 @@ theorem axesLe_antisymm {Measure : Type} :
         subst hxs
         rfl
 
+theorem axesLt_le {Measure : Type} :
+    ∀ (sp : MeasureSpace Measure) (a b : List Nat),
+      axesLt sp a b → axesLe sp a b := by
+  intro sp
+  induction sp with
+  | nil =>
+    intro a b h
+    cases a <;> cases h
+  | cons ax axs IH =>
+    intro a b h
+    cases a with
+    | nil => cases h
+    | cons xa xas =>
+      cases b with
+      | nil => cases h
+      | cons xb xbs =>
+        cases h with
+        | inl hlt => exact ⟨axisLt_le hlt.1, hlt.2⟩
+        | inr hle => exact ⟨hle.1, IH xas xbs hle.2⟩
+
 theorem axesLt_irrefl {Measure : Type} :
     ∀ (sp : MeasureSpace Measure) (a : List Nat), ¬ axesLt sp a a := by
   intro sp
@@ -269,8 +309,20 @@ theorem axesLt_irrefl {Measure : Type} :
     | nil => cases h
     | cons x xs =>
       cases h with
-      | inl hlt => exact not_axisLt_self ax.polarity x hlt
-      | inr hrest => exact IH xs hrest
+      | inl hlt => exact not_axisLt_self ax.polarity x hlt.1
+      | inr hrest => exact IH xs hrest.2
+
+/-- A strict first coordinate on a vector that does not cover the
+    space is not `axesLt`. -/
+theorem not_axesLt_of_short_vector :
+    ¬ axesLt
+        ([ { measure := (), polarity := .minimize },
+           { measure := (), polarity := .minimize } ] : MeasureSpace Unit)
+        [0] [1, 9] := by
+  intro h
+  cases h with
+  | inl h => cases h.2
+  | inr h => cases h.2
 
 theorem axesLt_trans_le {Measure : Type} :
     ∀ (sp : MeasureSpace Measure) (a b c : List Nat),
@@ -293,8 +345,11 @@ theorem axesLt_trans_le {Measure : Type} :
         | cons xc xcs =>
           obtain ⟨hleh, hlet⟩ := hle
           cases hlt with
-          | inl hltH => exact Or.inl (axisLt_trans_le hltH hleh)
-          | inr hltT => exact Or.inr (IH xas xbs xcs hlet hltT)
+          | inl hltH =>
+            exact Or.inl ⟨axisLt_trans_le hltH.1 hleh,
+              axesLe_trans axs xas xbs xcs hltH.2 hlet⟩
+          | inr hltT =>
+            exact Or.inr ⟨axisLe_trans hltT.1 hleh, IH xas xbs xcs hlet hltT.2⟩
 
 theorem axesLe_trans_lt {Measure : Type} :
     ∀ (sp : MeasureSpace Measure) (a b c : List Nat),
@@ -317,8 +372,11 @@ theorem axesLe_trans_lt {Measure : Type} :
         | cons xc xcs =>
           obtain ⟨hleh, hlet⟩ := hle
           cases hlt with
-          | inl hltH => exact Or.inl (axisLe_trans_lt hleh hltH)
-          | inr hltT => exact Or.inr (IH xas xbs xcs hlet hltT)
+          | inl hltH =>
+            exact Or.inl ⟨axisLe_trans_lt hleh hltH.1,
+              axesLe_trans axs xas xbs xcs hlet hltH.2⟩
+          | inr hltT =>
+            exact Or.inr ⟨axisLe_trans hleh hltT.1, IH xas xbs xcs hlet hltT.2⟩
 
 /-- Splitting a no-worse comparison across a concatenation of measure
     spaces, when the left reading vectors have the left space's length. -/
@@ -360,13 +418,16 @@ theorem axesLe_append {Measure : Type} :
         · intro h
           exact ⟨h.1.1, (IH sp2 xas xbs a2 b2 hxa hxb).mpr ⟨h.1.2, h.2⟩⟩
 
-/-- A strict coordinate on either side of a concatenated measure space
-    is a strict coordinate of the concatenation, and conversely. -/
+/-- A strict coordinate on one side of a concatenated measure space is
+    a strict coordinate of the concatenation when the other side is no
+    worse, and conversely. A strict side does not hide a regression on
+    the other side. -/
 theorem axesLt_append {Measure : Type} :
     ∀ (sp1 sp2 : MeasureSpace Measure) (a1 b1 a2 b2 : List Nat),
       a1.length = sp1.length → b1.length = sp1.length →
       (axesLt (sp1 ++ sp2) (a1 ++ a2) (b1 ++ b2) ↔
-        axesLt sp1 a1 b1 ∨ axesLt sp2 a2 b2) := by
+        (axesLt sp1 a1 b1 ∧ axesLe sp2 a2 b2) ∨
+          (axesLe sp1 a1 b1 ∧ axesLt sp2 a2 b2)) := by
   intro sp1
   induction sp1 with
   | nil =>
@@ -375,7 +436,7 @@ theorem axesLt_append {Measure : Type} :
     | nil =>
       cases b1 with
       | nil =>
-        simp [axesLt]
+        simp [axesLt, axesLe]
       | cons _ _ => simp at hb
     | cons _ _ => simp at ha
   | cons ax axs IH =>
@@ -395,20 +456,27 @@ theorem axesLt_append {Measure : Type} :
         constructor
         · intro h
           cases h with
-          | inl hh => exact Or.inl (Or.inl hh)
-          | inr ht =>
-            cases (IH sp2 xas xbs a2 b2 hxa hxb).mp ht with
-            | inl hl => exact Or.inl (Or.inr hl)
-            | inr hr => exact Or.inr hr
+          | inl hlt =>
+            obtain ⟨hleL, hleR⟩ :=
+              (axesLe_append axs sp2 xas xbs a2 b2 hxa hxb).mp hlt.2
+            exact Or.inl ⟨Or.inl ⟨hlt.1, hleL⟩, hleR⟩
+          | inr hrest =>
+            cases (IH sp2 xas xbs a2 b2 hxa hxb).mp hrest.2 with
+            | inl hl => exact Or.inl ⟨Or.inr ⟨hrest.1, hl.1⟩, hl.2⟩
+            | inr hr => exact Or.inr ⟨⟨hrest.1, hr.1⟩, hr.2⟩
         · intro h
           cases h with
           | inl hl =>
-            cases hl with
-            | inl hh => exact Or.inl hh
-            | inr ht =>
-              exact Or.inr ((IH sp2 xas xbs a2 b2 hxa hxb).mpr (Or.inl ht))
+            cases hl.1 with
+            | inl hhead =>
+              exact Or.inl ⟨hhead.1,
+                (axesLe_append axs sp2 xas xbs a2 b2 hxa hxb).mpr ⟨hhead.2, hl.2⟩⟩
+            | inr htail =>
+              exact Or.inr ⟨htail.1,
+                (IH sp2 xas xbs a2 b2 hxa hxb).mpr (Or.inl ⟨htail.2, hl.2⟩)⟩
           | inr hr =>
-            exact Or.inr ((IH sp2 xas xbs a2 b2 hxa hxb).mpr (Or.inr hr))
+            exact Or.inr ⟨hr.1.1,
+              (IH sp2 xas xbs a2 b2 hxa hxb).mpr (Or.inr ⟨hr.1.2, hr.2⟩)⟩
 
 /-- The observed profile of one symbol on one measure space.
 
@@ -425,7 +493,7 @@ structure Profile (Symbol Measure : Type) where
 
 /-- A profile is aligned with a measure space when it has one reading
     per axis. The preorder is reflexive on aligned profiles. -/
-def aligned {Symbol Measure : Type}
+abbrev aligned {Symbol Measure : Type}
     (space : MeasureSpace Measure) (p : Profile Symbol Measure) : Prop :=
   p.readings.length = space.length
 
@@ -586,7 +654,8 @@ theorem not_dominates_from_measures :
   let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
   let p : Profile Unit Unit := { symbol := (), readings := [0], observed := false }
   let q : Profile Unit Unit := { symbol := (), readings := [1], observed := true }
-  refine ⟨space, p, q, ⟨rfl, ⟨Nat.zero_le _, trivial⟩⟩, Or.inl (Nat.lt_succ_self 0), ?_⟩
+  refine ⟨space, p, q, ⟨rfl, ⟨Nat.zero_le _, trivial⟩⟩,
+    Or.inl ⟨Nat.lt_succ_self 0, trivial⟩, ?_⟩
   intro hd
   have hobs : p.observed = true := hd.1.2 rfl
   cases hobs
@@ -683,7 +752,7 @@ theorem dominates_append_left {Symbol Measure : Type}
   have hb : aligned sp1 q1 := (measuresLe_aligned h1.1.1).2
   have hlt :=
     (axesLt_append sp1 sp2 p1.readings q1.readings p2.readings q2.readings ha hb).mpr
-      (Or.inl h1.2)
+      (Or.inl ⟨h1.2, h2.1.2⟩)
   exact ⟨hle, hlt⟩
 
 theorem dominates_append_right {Symbol Measure : Type}
@@ -697,7 +766,7 @@ theorem dominates_append_right {Symbol Measure : Type}
   have hb : aligned sp1 q1 := (measuresLe_aligned h1.1).2
   have hlt :=
     (axesLt_append sp1 sp2 p1.readings q1.readings p2.readings q2.readings ha hb).mpr
-      (Or.inr h2.2)
+      (Or.inr ⟨h1.1.2, h2.2⟩)
   exact ⟨hle, hlt⟩
 
 /-- Product of profile orders, the direction that holds: both halves
@@ -714,7 +783,8 @@ theorem dominates_append_of_halves {Symbol Measure : Type}
   have ha : aligned sp1 p1 := (measuresLe_aligned h1.1).1
   have hb : aligned sp1 q1 := (measuresLe_aligned h1.1).2
   have hlt :=
-    (axesLt_append sp1 sp2 p1.readings q1.readings p2.readings q2.readings ha hb).mpr hs
+    (axesLt_append sp1 sp2 p1.readings q1.readings p2.readings q2.readings ha hb).mpr
+      (hs.elim (fun hl => Or.inl ⟨hl, h2.1.2⟩) (fun hr => Or.inr ⟨h1.1.2, hr⟩))
   exact ⟨hle, hlt⟩
 
 /-- Dominance on a concatenated space does not split into dominance,
@@ -736,7 +806,7 @@ theorem not_dominates_append_splits :
   · refine ⟨⟨⟨rfl, ⟨Nat.le_refl _, ⟨Nat.zero_le _, trivial⟩⟩⟩, ?_⟩, ?_⟩
     · intro hobs
       cases hobs
-    · exact Or.inr (Or.inl (Nat.lt_succ_self 0))
+    · exact Or.inr ⟨Nat.le_refl _, Or.inl ⟨Nat.lt_succ_self 0, trivial⟩⟩
   · intro hbad
     have : p1.observed = true := hbad.2 rfl
     cases this
@@ -747,12 +817,42 @@ theorem not_dominates_append_splits :
     components at one measurement, not a sequence of releases. -/
 abbrev Release (Symbol Measure : Type) := List (Profile Symbol Measure)
 
+/-- Each symbol occurs at most once. A second profile for the same
+    symbol is a different claim, not a second witness for the first. -/
+def uniqueSymbols {Symbol Measure : Type}
+    (R : Release Symbol Measure) : Prop :=
+  ∀ p ∈ R, ∀ q ∈ R, p.symbol = q.symbol → p = q
+
+/-- The two assemblies name no symbol in common. -/
+def symbolsDisjoint {Symbol Measure : Type}
+    (left right : Release Symbol Measure) : Prop :=
+  ∀ p ∈ left, ∀ q ∈ right, p.symbol ≠ q.symbol
+
+theorem uniqueSymbols_append {Symbol Measure : Type}
+    {left right : Release Symbol Measure}
+    (hL : uniqueSymbols left) (hR : uniqueSymbols right)
+    (hd : symbolsDisjoint left right) : uniqueSymbols (left ++ right) := by
+  intro p hp q hq hsym
+  cases List.mem_append.mp hp with
+  | inl hpl =>
+    cases List.mem_append.mp hq with
+    | inl hql => exact hL p hpl q hql hsym
+    | inr hqr => exact absurd hsym (hd p hpl q hqr)
+  | inr hpr =>
+    cases List.mem_append.mp hq with
+    | inl hql => exact absurd hsym.symm (hd q hql p hpr)
+    | inr hqr => exact hR p hpr q hqr hsym
+
 /-- Every incumbent symbol still has a `noWorse` profile in the
-    candidate. Symbols the candidate adds are unconstrained. -/
+    candidate, and each release names each symbol at most once. A
+    regressing duplicate of a symbol that also has a no-worse profile
+    does not pass. Symbols the candidate adds, once each, are
+    unconstrained. -/
 def releaseLe {Symbol Measure : Type}
     (space : MeasureSpace Measure)
     (candidate incumbent : Release Symbol Measure) : Prop :=
-  ∀ q ∈ incumbent, ∃ p ∈ candidate, noWorse space p q
+  uniqueSymbols candidate ∧ uniqueSymbols incumbent ∧
+    ∀ q ∈ incumbent, ∃ p ∈ candidate, noWorse space p q
 
 /-- Pareto dominance of one assembly over another: `releaseLe`, and at
     least one incumbent symbol is strictly dominated. -/
@@ -764,50 +864,57 @@ def releaseDominates {Symbol Measure : Type}
 
 theorem releaseLe_refl {Symbol Measure : Type}
     {space : MeasureSpace Measure} {R : Release Symbol Measure}
-    (h : ∀ p ∈ R, aligned space p) : releaseLe space R R :=
-  fun q hq => ⟨q, hq, noWorse_refl (h q hq)⟩
+    (hU : uniqueSymbols R) (h : ∀ p ∈ R, aligned space p) :
+    releaseLe space R R :=
+  ⟨hU, hU, fun q hq => ⟨q, hq, noWorse_refl (h q hq)⟩⟩
 
 theorem releaseLe_trans {Symbol Measure : Type}
     {space : MeasureSpace Measure}
     {c b a : Release Symbol Measure}
     (hcb : releaseLe space c b) (hba : releaseLe space b a) :
     releaseLe space c a := by
+  refine ⟨hcb.1, hba.2.1, ?_⟩
   intro q hq
-  obtain ⟨p, hp, hle⟩ := hba q hq
-  obtain ⟨p', hp', hle'⟩ := hcb p hp
+  obtain ⟨p, hp, hle⟩ := hba.2.2 q hq
+  obtain ⟨p', hp', hle'⟩ := hcb.2.2 p hp
   exact ⟨p', hp', noWorse_trans hle' hle⟩
 
-/-- Assemblies compose. If each component assembly is `releaseLe` its
-    incumbent, the concatenated assembly is too. -/
+/-- Assemblies of disjoint symbols compose. If each component assembly
+    is `releaseLe` its incumbent, the concatenated assembly is too. -/
 theorem releaseLe_append {Symbol Measure : Type}
     {space : MeasureSpace Measure}
     {c1 i1 c2 i2 : Release Symbol Measure}
-    (h1 : releaseLe space c1 i1) (h2 : releaseLe space c2 i2) :
+    (h1 : releaseLe space c1 i1) (h2 : releaseLe space c2 i2)
+    (hc : symbolsDisjoint c1 c2) (hi : symbolsDisjoint i1 i2) :
     releaseLe space (c1 ++ c2) (i1 ++ i2) := by
+  refine ⟨uniqueSymbols_append h1.1 h2.1 hc,
+    uniqueSymbols_append h1.2.1 h2.2.1 hi, ?_⟩
   intro q hq
   cases List.mem_append.mp hq with
   | inl hl =>
-    obtain ⟨p, hp, hle⟩ := h1 q hl
+    obtain ⟨p, hp, hle⟩ := h1.2.2 q hl
     exact ⟨p, List.mem_append_left _ hp, hle⟩
   | inr hr =>
-    obtain ⟨p, hp, hle⟩ := h2 q hr
+    obtain ⟨p, hp, hle⟩ := h2.2.2 q hr
     exact ⟨p, List.mem_append_right _ hp, hle⟩
 
 theorem releaseDominates_append_left {Symbol Measure : Type}
     {space : MeasureSpace Measure}
     {c1 i1 c2 i2 : Release Symbol Measure}
-    (h1 : releaseDominates space c1 i1) (h2 : releaseLe space c2 i2) :
+    (h1 : releaseDominates space c1 i1) (h2 : releaseLe space c2 i2)
+    (hc : symbolsDisjoint c1 c2) (hi : symbolsDisjoint i1 i2) :
     releaseDominates space (c1 ++ c2) (i1 ++ i2) := by
-  refine ⟨releaseLe_append h1.1 h2, ?_⟩
+  refine ⟨releaseLe_append h1.1 h2 hc hi, ?_⟩
   obtain ⟨q, hq, p, hp, hdom⟩ := h1.2
   exact ⟨q, List.mem_append_left _ hq, p, List.mem_append_left _ hp, hdom⟩
 
 theorem releaseDominates_append_right {Symbol Measure : Type}
     {space : MeasureSpace Measure}
     {c1 i1 c2 i2 : Release Symbol Measure}
-    (h1 : releaseLe space c1 i1) (h2 : releaseDominates space c2 i2) :
+    (h1 : releaseLe space c1 i1) (h2 : releaseDominates space c2 i2)
+    (hc : symbolsDisjoint c1 c2) (hi : symbolsDisjoint i1 i2) :
     releaseDominates space (c1 ++ c2) (i1 ++ i2) := by
-  refine ⟨releaseLe_append h1 h2.1, ?_⟩
+  refine ⟨releaseLe_append h1 h2.1 hc hi, ?_⟩
   obtain ⟨q, hq, p, hp, hdom⟩ := h2.2
   exact ⟨q, List.mem_append_right _ hq, p, List.mem_append_right _ hp, hdom⟩
 
@@ -826,7 +933,47 @@ theorem not_index_aligned_preorder :
   let commit : Profile Bool Unit :=
     { symbol := true, readings := [9], observed := true }
   let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
-  refine ⟨?_, ?_⟩
+  have uniqSwap : uniqueSymbols [commit, gate] := by
+    intro p hp q hq hsym
+    cases hp with
+    | head =>
+      cases hq with
+      | head => rfl
+      | tail _ hq =>
+        cases hq with
+        | head => cases hsym
+        | tail _ hr => cases hr
+    | tail _ hp =>
+      cases hp with
+      | head =>
+        cases hq with
+        | head => cases hsym
+        | tail _ hq =>
+          cases hq with
+          | head => rfl
+          | tail _ hr => cases hr
+      | tail _ hr => cases hr
+  have uniqInc : uniqueSymbols [gate, commit] := by
+    intro p hp q hq hsym
+    cases hp with
+    | head =>
+      cases hq with
+      | head => rfl
+      | tail _ hq =>
+        cases hq with
+        | head => cases hsym
+        | tail _ hr => cases hr
+    | tail _ hp =>
+      cases hp with
+      | head =>
+        cases hq with
+        | head => cases hsym
+        | tail _ hq =>
+          cases hq with
+          | head => rfl
+          | tail _ hr => cases hr
+      | tail _ hr => cases hr
+  refine ⟨⟨uniqSwap, uniqInc, ?_⟩, ?_⟩
   · intro q hq
     cases hq with
     | head _ =>
@@ -839,43 +986,90 @@ theorem not_index_aligned_preorder :
   · intro h
     simp [axisLe] at h
 
-/-- Profiles from `candidates` that no member of `candidates` dominates.
-    Membership is exact (`frontier_exact`); the list is finite because
-    it is a sublist of a finite list. -/
+/-- A candidate that keeps one no-worse profile and also submits a
+    regressing profile of the same symbol is not `releaseLe`. The
+    no-worse profile would have satisfied the incumbent by itself. -/
+theorem duplicate_candidate_not_releaseLe :
+    let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+    let good : Profile Bool Unit :=
+      { symbol := true, readings := [0], observed := true }
+    let regressing : Profile Bool Unit :=
+      { symbol := true, readings := [9], observed := true }
+    let incumbent : Profile Bool Unit :=
+      { symbol := true, readings := [1], observed := true }
+    (∃ p ∈ [good, regressing], noWorse space p incumbent) ∧
+      ¬ releaseLe space [good, regressing] [incumbent] := by
+  let space : MeasureSpace Unit := [{ measure := (), polarity := .minimize }]
+  let good : Profile Bool Unit :=
+    { symbol := true, readings := [0], observed := true }
+  let regressing : Profile Bool Unit :=
+    { symbol := true, readings := [9], observed := true }
+  let incumbent : Profile Bool Unit :=
+    { symbol := true, readings := [1], observed := true }
+  refine ⟨⟨good, List.mem_cons_self, ⟨⟨rfl, ⟨Nat.zero_le _, trivial⟩⟩, fun _ => rfl⟩⟩, ?_⟩
+  intro h
+  have heq : good = regressing :=
+    h.1 good List.mem_cons_self regressing
+      (List.mem_cons_of_mem _ List.mem_cons_self) rfl
+  have hread : good.readings = regressing.readings := congrArg Profile.readings heq
+  cases hread
+
+/-- Aligned profiles from `candidates` that no member of `candidates`
+    dominates. A profile whose readings do not cover the space is not
+    on the frontier. Membership is exact (`frontier_exact`); the list
+    is finite because it is a sublist of a finite list. -/
 def frontier {Symbol Measure : Type} [DecidableEq Symbol]
     (space : MeasureSpace Measure) (candidates : List (Profile Symbol Measure)) :
     List (Profile Symbol Measure) :=
-  candidates.filter (fun p => !(candidates.any (fun q => decide (dominates space q p))))
+  candidates.filter (fun p =>
+    decide (aligned space p) &&
+      !(candidates.any (fun q => decide (dominates space q p))))
 
 theorem frontier_exact {Symbol Measure : Type} [DecidableEq Symbol]
     {space : MeasureSpace Measure} {L : List (Profile Symbol Measure)}
     {p : Profile Symbol Measure} :
-    p ∈ frontier space L ↔ p ∈ L ∧ ∀ q ∈ L, ¬ dominates space q p := by
+    p ∈ frontier space L ↔
+      p ∈ L ∧ aligned space p ∧ ∀ q ∈ L, ¬ dominates space q p := by
   constructor
   · intro h
     have hmem := List.mem_filter.mp h
-    refine ⟨hmem.1, ?_⟩
+    have hcond := hmem.2
+    simp only [Bool.and_eq_true, Bool.not_eq_true'] at hcond
+    obtain ⟨hal, hnot⟩ := hcond
+    refine ⟨hmem.1, of_decide_eq_true hal, ?_⟩
     intro q hq hdom
     have hany : L.any (fun r => decide (dominates space r p)) = true :=
       List.any_eq_true.mpr ⟨q, hq, decide_eq_true hdom⟩
-    have hnot := hmem.2
     rw [hany] at hnot
     cases hnot
   · intro h
     apply List.mem_filter.mpr
     refine ⟨h.1, ?_⟩
+    have hal : decide (aligned space p) = true := decide_eq_true h.2.1
     cases hb : L.any (fun q => decide (dominates space q p)) with
-    | false => rfl
+    | false =>
+      rw [hal]
+      rfl
     | true =>
       rcases List.any_eq_true.mp hb with ⟨q, hq, hd⟩
-      exact absurd (of_decide_eq_true hd) (h.2 q hq)
+      exact absurd (of_decide_eq_true hd) (h.2.2 q hq)
 
 theorem frontier_antichain {Symbol Measure : Type} [DecidableEq Symbol]
     {space : MeasureSpace Measure} {L : List (Profile Symbol Measure)}
     {p q : Profile Symbol Measure}
     (hp : p ∈ frontier space L) (hq : q ∈ frontier space L) :
     ¬ dominates space p q :=
-  (frontier_exact.mp hq).2 p (frontier_exact.mp hp).1
+  (frontier_exact.mp hq).2.2 p (frontier_exact.mp hp).1
+
+/-- A profile whose readings do not cover the space is not undominated
+    output. Nothing in the candidate list dominates it; alignment
+    removes it. -/
+theorem misaligned_not_on_frontier :
+    ({ symbol := (), readings := [0, 0], observed := true } : Profile Unit Unit) ∉
+      frontier [{ measure := (), polarity := .minimize }]
+        [{ symbol := (), readings := [0, 0], observed := true }] := by
+  intro h
+  exact absurd (frontier_exact.mp h).2.1 (by decide)
 
 #print axioms noWorse_refl
 #print axioms noWorse_trans
@@ -890,7 +1084,10 @@ theorem frontier_antichain {Symbol Measure : Type} [DecidableEq Symbol]
 #print axioms releaseLe_trans
 #print axioms releaseLe_append
 #print axioms not_index_aligned_preorder
+#print axioms duplicate_candidate_not_releaseLe
+#print axioms not_axesLt_of_short_vector
 #print axioms frontier_exact
+#print axioms misaligned_not_on_frontier
 
 end Interface
 end SoftwareIsQuantifiable

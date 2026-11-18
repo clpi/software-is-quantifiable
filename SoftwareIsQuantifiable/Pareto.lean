@@ -454,18 +454,18 @@ theorem dominates_iff_interface (x y : Point) :
     refine ⟨⟨⟨rfl, ?_⟩, fun _ => rfl⟩, ?_⟩
     · exact ⟨h1, ⟨h2, trivial⟩⟩
     · rcases h3 with h | h
-      · exact Or.inl h
-      · exact Or.inr (Or.inl h)
+      · exact Or.inl ⟨h, ⟨h2, trivial⟩⟩
+      · exact Or.inr ⟨h1, Or.inl ⟨h, trivial⟩⟩
   · intro h
     obtain ⟨⟨⟨_, haxes⟩, _⟩, hlt⟩ := h
     obtain ⟨h1, hrest⟩ := haxes
     obtain ⟨h2, _⟩ := hrest
     refine ⟨h1, h2, ?_⟩
-    rcases hlt with h | h
-    · exact Or.inl h
-    · rcases h with h | h
-      · exact Or.inr h
-      · cases h
+    rcases hlt with ⟨hlt1, _⟩ | ⟨_, hlt2⟩
+    · exact Or.inl hlt1
+    · rcases hlt2 with ⟨hlt2, _⟩ | ⟨_, hbot⟩
+      · exact Or.inr hlt2
+      · cases hbot
 /-- Componentwise non-regression, distinct from non-domination.
     Costs must refer to the same axes, workload, venue, and measurement
     interpretation. Equality of context keys below binds that scope;
