@@ -213,16 +213,28 @@ inductive Behavior where
   | noSilentDrop
   deriving DecidableEq, Repr
 
-def required : List Behavior :=
-  [.denyMissing, .allowValid, .appendDurable, .noSilentDrop]
+def priorBehaviors : Pareto.PriorQualification Behavior where
+  qualified := [.denyMissing, .allowValid, .appendDurable, .noSilentDrop]
 
-def trimmed : List Behavior :=
-  [.denyMissing, .allowValid, .appendDurable]
+def trimmedSubmission : Pareto.BehaviorSubmission Behavior where
+  offered := [.denyMissing, .allowValid, .appendDurable]
 
-theorem trimmed_rejected : Pareto.accepts required trimmed = false := by
+def emptySubmission : Pareto.BehaviorSubmission Behavior where
+  offered := []
+
+def fullSubmission : Pareto.BehaviorSubmission Behavior where
+  offered := [.denyMissing, .allowValid, .appendDurable, .noSilentDrop]
+
+theorem trimmed_rejected :
+    Pareto.noQualifiedBehaviorLost priorBehaviors trimmedSubmission = false := by
   decide
 
-theorem full_accepted : Pareto.accepts required required = true := by
+theorem empty_submission_rejected :
+    Pareto.noQualifiedBehaviorLost priorBehaviors emptySubmission = false := by
+  decide
+
+theorem full_kept :
+    Pareto.noQualifiedBehaviorLost priorBehaviors fullSubmission = true := by
   decide
 
 inductive AxisId where
@@ -254,45 +266,18 @@ theorem cost_does_not_excuse_behavior_drop :
   have hobs : fastDrop.observed = true := h.2 rfl
   cases hobs
 
-def seen : Coverage.Ledger where
-  records := [{ exec := 1, events := 4 }]
+def validWitness (w : Coverage.Witness) : Bool :=
+  decide (w.events > 0)
 
 theorem request_two_uncovered :
-    ¬ Coverage.ledgerWitnessed seen { id := 2 } := by
-  intro h
-  rcases h with ⟨w, hw, hww⟩
-  simp [seen, Coverage.Witnessed] at hw hww
-  cases hw
-  cases hww
-
-def gateLedger : Coverage.Ledger where
-  records := [{ exec := 1, events := 2 }]
-
-def commitLedger : Coverage.Ledger where
-  records := [{ exec := 2, events := 3 }]
-
-def gateRequests : List Coverage.Execution := [{ id := 1 }]
-
-def commitRequests : List Coverage.Execution := [{ id := 2 }]
-
-theorem gate_requests_covered :
-    ∀ e ∈ gateRequests, Coverage.ledgerWitnessed gateLedger e := by
-  intro e he
-  simp [gateRequests] at he
-  subst he
-  exact ⟨{ exec := 1, events := 2 }, by simp [gateLedger], rfl⟩
-
-theorem commit_requests_covered :
-    ∀ e ∈ commitRequests, Coverage.ledgerWitnessed commitLedger e := by
-  intro e he
-  simp [commitRequests] at he
-  subst he
-  exact ⟨{ exec := 2, events := 3 }, by simp [commitLedger], rfl⟩
+    Coverage.recorded validWitness [{ exec := 1, events := 4 }] { id := 2 } = false := by
+  decide
 
 theorem path_requests_covered :
-    ∀ e ∈ gateRequests ++ commitRequests,
-      Coverage.ledgerWitnessed (Coverage.appendLedger gateLedger commitLedger) e :=
-  Coverage.ledger_coverage_compose gate_requests_covered commit_requests_covered
+    let ledger := ([{ exec := 1, events := 2 }] ++ [{ exec := 2, events := 3 }])
+    Coverage.recorded validWitness ledger { id := 1 } = true ∧
+      Coverage.recorded validWitness ledger { id := 2 } = true := by
+  decide
 
 end Instance
 end SoftwareIsQuantifiable

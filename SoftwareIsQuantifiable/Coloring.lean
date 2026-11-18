@@ -16,6 +16,8 @@ namespace Coloring
 
 variable {F : Type} [DecidableEq F]
 
+set_option linter.unusedSectionVars false
+
 /-- A ground Horn rule over facts: from all of its premises, conclude
     its conclusion. -/
 structure Rule (F : Type) where
@@ -40,6 +42,7 @@ theorem and_eq_true {a b : Bool} (h : (a && b) = true) :
     | false => simp at h
     | true => exact ⟨rfl, rfl⟩
 
+omit [DecidableEq F] in
 theorem holds_eq_true {s : State F} {l : List F} :
     holds s l = true ↔ ∀ p ∈ l, s p = true := by
   induction l with
@@ -60,7 +63,7 @@ theorem holds_eq_true {s : State F} {l : List F} :
       | head _ => exact ha
       | tail _ hpm => exact IH.mp hl p hpm
     · intro h
-      have ha : s a = true := h a (List.mem_cons_self _ _)
+      have ha : s a = true := h a (List.Mem.head _)
       have hl : holds s l = true :=
         IH.mpr (fun p hp => h p (List.mem_cons_of_mem _ hp))
       show (s a && holds s l) = true
@@ -83,7 +86,7 @@ theorem any_eq_true {β : Type} {l : List β} {p : β → Bool} :
     · intro h
       have h' : (p a || l.any p) = true := h
       cases hb : p a with
-      | true => exact ⟨a, List.mem_cons_self _ _, hb⟩
+      | true => exact ⟨a, List.Mem.head _, hb⟩
       | false =>
         have h2 : l.any p = true := by simpa [hb] using h'
         cases IH.mp h2 with
@@ -148,6 +151,7 @@ def count : List F → State F → Nat
   | [], _ => 0
   | a :: U, s => contrib (s a) + count U s
 
+omit [DecidableEq F] in
 /-- The count never exceeds the universe. -/
 theorem count_le (U : List F) (s : State F) : count U s ≤ U.length := by
   induction U with
@@ -158,6 +162,7 @@ theorem count_le (U : List F) (s : State F) : count U s ≤ U.length := by
     | true => show 1 + count U s ≤ U.length + 1; omega
     | false => show 0 + count U s ≤ U.length + 1; omega
 
+omit [DecidableEq F] in
 /-- Counting is monotone in the state. -/
 theorem count_le_of_le : ∀ (U : List F) {p q : State F},
     (∀ x ∈ U, p x = true → q x = true) → count U p ≤ count U q := by
@@ -170,7 +175,7 @@ theorem count_le_of_le : ∀ (U : List F) {p q : State F},
       IH (fun x hx => hle x (List.mem_cons_of_mem _ hx))
     show contrib (p a) + count U p ≤ contrib (q a) + count U q
     by_cases hpa : p a = true
-    · have hqa : q a = true := hle a (List.mem_cons_self _ _) hpa
+    · have hqa : q a = true := hle a (List.Mem.head _) hpa
       rw [hpa, hqa]
       show 1 + count U p ≤ 1 + count U q
       omega
@@ -182,6 +187,7 @@ theorem count_le_of_le : ∀ (U : List F) {p q : State F},
       show 0 + count U p ≤ contrib (q a) + count U q
       omega
 
+omit [DecidableEq F] in
 /-- Counting strictly grows when a state grows somewhere in the
     universe. -/
 theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
@@ -192,7 +198,7 @@ theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
   | nil =>
     intro p q _ hex
     cases hex with
-    | intro y hy => exact absurd hy.1 (List.not_mem_nil y)
+    | intro y hy => exact nomatch hy.1
   | cons a U IH =>
     intro p q hle hex
     have hle' : ∀ x ∈ U, p x = true → q x = true :=
@@ -211,7 +217,7 @@ theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
           | tail _ hym => exact ⟨y, hym, hy.2⟩
       have hlt : count U p < count U q := IH hle' hex'
       by_cases hpa : p a = true
-      · have hqa : q a = true := hle a (List.mem_cons_self _ _) hpa
+      · have hqa : q a = true := hle a (List.Mem.head _) hpa
         rw [hpa, hqa]
         show 1 + count U p < 1 + count U q
         omega
@@ -399,7 +405,7 @@ theorem deriv_closed (rules : List (Rule F)) (seed : State F) :
 theorem coloring_sound (rules : List (Rule F)) (U : List F) (seed : State F) :
     ∀ f, coloring rules U seed f = true → Deriv rules seed f :=
   fun f hf => iter_sound rules seed (U.length + 1) seed
-    (fun g hg => Deriv.seed hg) f hf
+    (fun _ hg => Deriv.seed hg) f hf
 
 /-- **Completeness of the coloring**: every derivable fact is
     colored. Together with soundness, the coloring is exactly the
@@ -407,7 +413,7 @@ theorem coloring_sound (rules : List (Rule F)) (U : List F) (seed : State F) :
 theorem coloring_complete (rules : List (Rule F)) (U : List F) (seed : State F)
     (hU : ∀ r ∈ rules, r.conclusion ∈ U) :
     ∀ f, Deriv rules seed f → coloring rules U seed f = true :=
-  fun f hf => deriv_closed rules seed hf (coloring rules U seed)
+  fun _ hf => deriv_closed rules seed hf (coloring rules U seed)
     (fun g hg => le_iter rules (U.length + 1) seed g hg)
     (coloring_fixed rules U seed hU)
 
@@ -575,7 +581,7 @@ theorem deriv_embed_left {F1 F2 : Type _} {rules1 : List (Rule F1)}
     rename_i r
     refine Deriv.apply (r := embedRuleLeft r) ?_ ?_
     · exact List.mem_append_left _
-        (List.mem_map_of_mem embedRuleLeft hr)
+        (List.mem_map_of_mem hr)
     · intro p hpm
       rcases List.mem_map.mp hpm with ⟨p1, hp1, rfl⟩
       exact IH p1 hp1
@@ -593,7 +599,7 @@ theorem deriv_embed_right {F1 F2 : Type _} {rules1 : List (Rule F1)}
     rename_i r
     refine Deriv.apply (r := embedRuleRight r) ?_ ?_
     · exact List.mem_append_right _
-        (List.mem_map_of_mem embedRuleRight hr)
+        (List.mem_map_of_mem hr)
     · intro p hpm
       rcases List.mem_map.mp hpm with ⟨p1, hp1, rfl⟩
       exact IH p1 hp1
@@ -624,7 +630,7 @@ theorem deriv_segregated {F1 F2 : Type _}
         apply Deriv.apply hr1
         intro p hpm
         have hmem : (Sum.inl p : F1 ⊕ F2) ∈ (embedRuleLeft r1).premises :=
-          List.mem_map_of_mem (Sum.inl : F1 → F1 ⊕ F2) hpm
+          List.mem_map_of_mem hpm
         exact (IH (Sum.inl p) hmem).1 p rfl
       · cases hf
     | inr hR =>
@@ -635,7 +641,7 @@ theorem deriv_segregated {F1 F2 : Type _}
         apply Deriv.apply hr2
         intro p hpm
         have hmem : (Sum.inr p : F1 ⊕ F2) ∈ (embedRuleRight r2).premises :=
-          List.mem_map_of_mem (Sum.inr : F2 → F1 ⊕ F2) hpm
+          List.mem_map_of_mem hpm
         exact (IH (Sum.inr p) hmem).2 p rfl
 
 theorem embed_universe_closed {F1 F2 : Type _}
@@ -650,11 +656,11 @@ theorem embed_universe_closed {F1 F2 : Type _}
   | inl hL =>
     rcases List.mem_map.mp hL with ⟨r1, hr1, rfl⟩
     unfold embedUniverse
-    exact List.mem_append_left _ (List.mem_map_of_mem Sum.inl (h1 r1 hr1))
+    exact List.mem_append_left _ (List.mem_map_of_mem (h1 r1 hr1))
   | inr hR =>
     rcases List.mem_map.mp hR with ⟨r2, hr2, rfl⟩
     unfold embedUniverse
-    exact List.mem_append_right _ (List.mem_map_of_mem Sum.inr (h2 r2 hr2))
+    exact List.mem_append_right _ (List.mem_map_of_mem (h2 r2 hr2))
 
 /-- **Segregated domains factor.** When every rule lies entirely on one
     side of a sum of fact domains, the coloring of the sum at a left

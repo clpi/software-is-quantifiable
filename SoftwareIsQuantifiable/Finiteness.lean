@@ -122,7 +122,7 @@ theorem length_flatMap_const {α β : Type _} (n : Nat) (l : List α) (f : α �
   induction l with
   | nil => simp [List.flatMap_nil]
   | cons a l IH =>
-    have ha : (f a).length = n := h a (List.mem_cons_self _ _)
+    have ha : (f a).length = n := h a List.mem_cons_self
     have htail : ∀ x ∈ l, (f x).length = n :=
       fun x hx => h x (List.mem_cons_of_mem _ hx)
     rw [List.flatMap_cons, List.length_append, IH htail, ha, List.length_cons,
@@ -237,20 +237,20 @@ theorem combine_valid {R1 V1 R2 V2 : Type}
       have hs := steps1 p1 hp1
       refine ⟨?_, ?_⟩
       · simpa [product] using
-          (List.mem_append_left _ (List.mem_map_of_mem Sum.inl hs.1) :
+          (List.mem_append_left _ (List.mem_map_of_mem hs.1) :
             Sum.inl p1.1 ∈ q1.runs.map Sum.inl ++ q2.runs.map Sum.inr)
       · simpa [product] using
-          (List.mem_append_left _ (List.mem_map_of_mem Sum.inl hs.2) :
+          (List.mem_append_left _ (List.mem_map_of_mem hs.2) :
             Sum.inl p1.2 ∈ q1.venues.map Sum.inl ++ q2.venues.map Sum.inr)
     | inr hr =>
       rcases List.mem_map.mp hr with ⟨p2, hp2, rfl⟩
       have hs := steps2 p2 hp2
       refine ⟨?_, ?_⟩
       · simpa [product] using
-          (List.mem_append_right _ (List.mem_map_of_mem Sum.inr hs.1) :
+          (List.mem_append_right _ (List.mem_map_of_mem hs.1) :
             Sum.inr p2.1 ∈ q1.runs.map Sum.inl ++ q2.runs.map Sum.inr)
       · simpa [product] using
-          (List.mem_append_right _ (List.mem_map_of_mem Sum.inr hs.2) :
+          (List.mem_append_right _ (List.mem_map_of_mem hs.2) :
             Sum.inr p2.2 ∈ q1.venues.map Sum.inl ++ q2.venues.map Sum.inr)
   · intro r hr
     simp [product, List.mem_append, List.mem_map] at hr
@@ -260,20 +260,20 @@ theorem combine_valid {R1 V1 R2 V2 : Type}
       obtain ⟨v, hv, hstep⟩ := cov1 r1 hr1
       refine ⟨Sum.inl v, ?_, ?_⟩
       · simpa [product] using
-          (List.mem_append_left _ (List.mem_map_of_mem Sum.inl hv) :
+          (List.mem_append_left _ (List.mem_map_of_mem hv) :
             Sum.inl v ∈ q1.venues.map Sum.inl ++ q2.venues.map Sum.inr)
       · simpa [combineSched, tagLeft] using
-          (List.mem_append_left _ (List.mem_map_of_mem (fun p => (Sum.inl p.1, Sum.inl p.2)) hstep) :
+          (List.mem_append_left _ (List.mem_map_of_mem hstep) :
             (Sum.inl r1, Sum.inl v) ∈ tagLeft s1 ++ tagRight s2)
     | inr hex =>
       rcases hex with ⟨r2, hr2, rfl⟩
       obtain ⟨v, hv, hstep⟩ := cov2 r2 hr2
       refine ⟨Sum.inr v, ?_, ?_⟩
       · simpa [product] using
-          (List.mem_append_right _ (List.mem_map_of_mem Sum.inr hv) :
+          (List.mem_append_right _ (List.mem_map_of_mem hv) :
             Sum.inr v ∈ q1.venues.map Sum.inl ++ q2.venues.map Sum.inr)
       · simpa [combineSched, tagRight] using
-          (List.mem_append_right _ (List.mem_map_of_mem (fun p => (Sum.inr p.1, Sum.inr p.2)) hstep) :
+          (List.mem_append_right _ (List.mem_map_of_mem hstep) :
             (Sum.inr r2, Sum.inr v) ∈ tagLeft s1 ++ tagRight s2)
 
 /-- A schedule stays on the component it drew its run from. -/

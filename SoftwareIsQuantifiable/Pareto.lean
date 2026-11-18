@@ -11,9 +11,9 @@ import SoftwareIsQuantifiable.Interface
   * The frontier is nonempty: every finite nonempty set of cost
     points has an undominated element (§20.1, §20.2 existence).
   * A frontier output is never dominated by a named incumbent from
-    the same candidate set — the regression-freedom content of the
-    acceptance discipline (§21.3): an output the incumbent dominated
-    would not be on the frontier.
+    the same candidate set. This excludes dominated outputs, but does NOT
+    exclude incomparable trade-offs. Componentwise no-regression
+    requires the separate incumbent admission guard below.
   * Refinement is monotone (§20.2): witnesses only shrink intervals,
     and a pair decided under wider bounds stays decided under
     narrower ones.
@@ -21,10 +21,9 @@ import SoftwareIsQuantifiable.Interface
     and only if it drops no previously qualified behavior.
 
   What is DISPROVEN:
-  * The per-execution strengthening — "a dominated schedule finishes
-    worse on every single execution" — is false, by a concrete
-    counterexample (spec §20.4 names this boundary itself: dominance
-    holds at the level of bounds, not per single execution).
+  * Without separation, overlapping intervals do not establish
+    per-execution dominance. With separation, separated_sound DOES
+    establish dominance for every pair of in-bound realizations.
 -/
 
 namespace SoftwareIsQuantifiable
@@ -145,7 +144,7 @@ theorem frontier_nonempty {L : List Point} (hL : L ≠ []) :
   | nil => exact absurd rfl hL
   | cons x xs =>
     cases exists_undominated_aux (x.1 + x.2) (x :: xs) x
-        (List.mem_cons_self _ _) (Nat.le_refl _) with
+        (by simp) (Nat.le_refl _) with
     | intro y hy => exact ⟨y, hy.1, hy.2.2⟩
 
 /-- **No output is dominated by a named incumbent.** If the incumbent
@@ -154,7 +153,7 @@ theorem frontier_nonempty {L : List Point} (hL : L ≠ []) :
     ordering that the previously qualified ordering dominated is
     never the output. -/
 theorem frontier_not_dominated {L : List Point} {out inc : Point}
-    (hout : out ∈ L) (hinc : inc ∈ L)
+    (_hout : out ∈ L) (hinc : inc ∈ L)
     (hfrontier : ∀ z ∈ L, ¬ dominates z out) :
     ¬ dominates inc out :=
   hfrontier inc hinc
@@ -169,50 +168,39 @@ theorem and_eq_true {a b : Bool} (h : (a && b) = true) :
     | false => simp at h
     | true => exact ⟨rfl, rfl⟩
 
-/-- The regression gate (§21.3) as a decidable check: a candidate is
-    accepted exactly when its behavior list still contains every
-    previously qualified behavior. -/
-def accepts {B : Type} [DecidableEq B] (qualified candidate : List B) : Bool :=
-  qualified.all (fun b => decide (b ∈ candidate))
+/-- Behaviors already qualified by the previous qualification closure.
+    This is not a field of a candidate submission. -/
+structure PriorQualification (B : Type) where
+  /-- The qualified behaviors carried forward from the previous closure. -/
+  qualified : List B
 
-/-- The gate's exactness, both directions: it accepts if and only if
-    no previously qualified behavior is dropped. So a candidate that
-    drops a behavior is rejected, by construction, at introduction
-    time — never discovered later. -/
-theorem accepts_iff {B : Type} [DecidableEq B]
-    {qualified candidate : List B} :
-    accepts qualified candidate = true ↔
-      ∀ b ∈ qualified, b ∈ candidate := by
-  induction qualified with
-  | nil => simp [accepts]
-  | cons a q IH =>
-    constructor
-    · intro h b hb
-      have h' : (decide (a ∈ candidate) && accepts q candidate) = true := h
-      have ha : decide (a ∈ candidate) = true := (and_eq_true h').1
-      have hq : accepts q candidate = true := (and_eq_true h').2
-      cases hb with
-      | head _ => exact of_decide_eq_true ha
-      | tail _ hbm => exact IH.mp hq b hbm
-    · intro h
-      have ha : a ∈ candidate := h a (List.mem_cons_self _ _)
-      have hq : accepts q candidate = true :=
-        IH.mpr (fun b hb => h b (List.mem_cons_of_mem _ hb))
-      have hdec : decide (a ∈ candidate) = true := by
-        cases hd : decide (a ∈ candidate) with
-        | true => rfl
-        | false => exact (of_decide_eq_false hd ha).elim
-      show (decide (a ∈ candidate) && accepts q candidate) = true
-      rw [hdec, hq]
-      rfl
+/-- The behavior list a candidate submission offers. -/
+structure BehaviorSubmission (B : Type) where
+  /-- Behaviors the submission offers. -/
+  offered : List B
 
-/-- **DISPROOF — per-execution dominance is false** (§20.4's own
-    named boundary). Take schedule X with witnessed time bounds
+/-- One half of admission: no behavior qualified by the prior
+    qualification is missing from the submission. The qualified list
+    is read from `prior`, never from the submission. -/
+def noQualifiedBehaviorLost {B : Type} [DecidableEq B]
+    (prior : PriorQualification B) (submission : BehaviorSubmission B) : Bool :=
+  prior.qualified.all (fun b => decide (b ∈ submission.offered))
+
+/-- The half is exact: it holds iff every prior qualified behavior is
+    still offered. -/
+theorem noQualifiedBehaviorLost_iff {B : Type} [DecidableEq B]
+    {prior : PriorQualification B} {submission : BehaviorSubmission B} :
+    noQualifiedBehaviorLost prior submission = true ↔
+      ∀ b ∈ prior.qualified, b ∈ submission.offered := by
+  simp [noQualifiedBehaviorLost, List.all_eq_true, decide_eq_true_iff]
+
+/-- **DISPROOF — overlapping bounds alone are insufficient.**
+    Take schedule X with witnessed time bounds
     [1, 100] and schedule Y with witnessed time bounds [2, 3]
     (compute equal). The claim "every realization of Y beats every
     realization of X" is false: X can realize 1 while Y realizes 3.
-    Dominance in this design is a statement about bounds, never
-    about a single execution. -/
+    These intervals do not satisfy separation. This does not refute
+    separated_sound, which covers every in-bound realization. -/
 theorem not_per_execution_dominance :
     ¬ ∀ x y : Point,
       (1 ≤ x.1 ∧ x.1 ≤ 100 ∧ x.2 = 0) →
@@ -478,6 +466,189 @@ theorem dominates_iff_interface (x y : Point) :
     · rcases h with h | h
       · exact Or.inr h
       · cases h
+/-- Componentwise non-regression, distinct from non-domination.
+    Costs must refer to the same axes, workload, venue, and measurement
+    interpretation. Equality of context keys below binds that scope;
+    it does not prove the correctness of a measurement or its model. -/
+def noWorse (candidate incumbent : Point) : Prop :=
+  candidate.1 ≤ incumbent.1 ∧ candidate.2 ≤ incumbent.2
+
+instance (a b : Point) : Decidable (noWorse a b) :=
+  inferInstanceAs (Decidable (a.1 ≤ b.1 ∧ a.2 ≤ b.2))
+
+/-- Executable counterexample: a frontier may trade worse time for
+    better compute. Frontier membership alone is not a release gate. -/
+theorem frontier_can_regress :
+    let inc : Point := (1, 10)
+    let out : Point := (10, 1)
+    (∀ z ∈ [inc, out], ¬ dominates z out) ∧
+    ¬ noWorse out inc := by
+  simp [dominates, noWorse]
+
+#eval decide (noWorse (10, 1) (1, 10)) -- false
+
+/-- Keep the original candidates, admitting only no-worse costs. -/
+def admitted (inc : Point) (candidates : List Point) : List Point :=
+  candidates.filter (fun candidate => decide (noWorse candidate inc))
+
+theorem admitted_noWorse {inc out : Point} {candidates : List Point}
+    (h : out ∈ admitted inc candidates) : noWorse out inc := by
+  simpa [admitted] using (List.mem_filter.mp h).2
+
+/-- Baseline retention makes the guarded frontier nonempty. -/
+theorem admitted_frontier_exists {inc : Point} {candidates : List Point}
+    (hinc : inc ∈ candidates) :
+    ∃ out ∈ admitted inc candidates,
+      noWorse out inc ∧
+      ∀ z ∈ admitted inc candidates, ¬ dominates z out := by
+  have hi : inc ∈ admitted inc candidates := by
+    simp [admitted, noWorse, hinc]
+  have hn : admitted inc candidates ≠ [] := by
+    intro he
+    simp [he] at hi
+  obtain ⟨out, ho, hf⟩ := frontier_nonempty hn
+  exact ⟨out, ho, admitted_noWorse ho, hf⟩
+
+/-- Guarded frontier selection has BOTH guarantees, not just one.
+    Any dominator of an admitted point is itself no worse than the
+    incumbent, so the guarded frontier is also globally nondominated. -/
+theorem admitted_frontier_sound {inc out : Point} {candidates : List Point}
+    (hout : out ∈ admitted inc candidates)
+    (hf : ∀ z ∈ admitted inc candidates, ¬ dominates z out) :
+    noWorse out inc ∧ ∀ z ∈ candidates, ¬ dominates z out := by
+  have hn := admitted_noWorse hout
+  refine ⟨hn, ?_⟩
+  intro z hz hd
+  have hzi : noWorse z inc :=
+    ⟨Nat.le_trans hd.1 hn.1, Nat.le_trans hd.2.1 hn.2⟩
+  have hza : z ∈ admitted inc candidates := by
+    simp [admitted, hz, hzi]
+  exact hf z hza hd
+
+/-- Admission joins three checks. `noQualifiedBehaviorLost` is the
+    behavior half: the prior qualification's behaviors are kept.
+    The other halves are a shared context key and componentwise
+    cost non-regression. The submission does not choose the qualified set. -/
+def acceptsRelease {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (prior : PriorQualification B) (submission : BehaviorSubmission B)
+    (inc out : Point) : Bool :=
+  decide (candidateContext = baselineContext) &&
+    noQualifiedBehaviorLost prior submission && decide (noWorse out inc)
+
+theorem acceptsRelease_iff {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (prior : PriorQualification B) (submission : BehaviorSubmission B)
+    (inc out : Point) :
+    acceptsRelease baselineContext candidateContext prior submission inc out = true ↔
+      candidateContext = baselineContext ∧
+      (∀ b ∈ prior.qualified, b ∈ submission.offered) ∧ noWorse out inc := by
+  simp [acceptsRelease, Bool.and_eq_true, noQualifiedBehaviorLost_iff, and_assoc]
+
+/-- A sufficient interval separation for replacement without worsening
+    either cost axis. Reuse the existing point relation on candidate
+    upper bounds and incumbent lower bounds. -/
+def weaklySeparated (ct cc it ic : Bounds) : Prop :=
+  noWorse (ct.hi, cc.hi) (it.lo, ic.lo)
+
+/-- Non-strict separation prevents regression for every pair of
+    realizations inside the supplied bounds. -/
+theorem weaklySeparated_sound {ct cc it ic : Bounds}
+    (h : weaklySeparated ct cc it ic) {x y : Point}
+    (hx : realizes ct cc x) (hy : realizes it ic y) :
+    noWorse x y := by
+  obtain ⟨ht, hc⟩ := h
+  obtain ⟨hx1, hx2, hx3, hx4⟩ := hx
+  obtain ⟨hy1, hy2, hy3, hy4⟩ := hy
+  exact ⟨by omega, by omega⟩
+
+/-- The interval adapter uses the same scoped release authority. The
+    supplied bounds and behavior lists must refer to the named common
+    measurement context; assigning physical evidence remains external. -/
+def acceptsReplacement {B Context : Type} [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (prior : PriorQualification B) (submission : BehaviorSubmission B)
+    (ct cc it ic : Bounds) : Bool :=
+  acceptsRelease baselineContext candidateContext prior submission
+    (it.lo, ic.lo) (ct.hi, cc.hi)
+
+/-- Exactness is inherited from scoped release admission; there is no
+    second independently maintained behavior or point-cost gate. -/
+theorem acceptsReplacement_iff {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    (baselineContext candidateContext : Context)
+    (prior : PriorQualification B) (submission : BehaviorSubmission B)
+    (ct cc it ic : Bounds) :
+    acceptsReplacement baselineContext candidateContext prior submission ct cc it ic = true ↔
+      candidateContext = baselineContext ∧
+      (∀ b ∈ prior.qualified, b ∈ submission.offered) ∧ weaklySeparated ct cc it ic :=
+  acceptsRelease_iff baselineContext candidateContext prior submission
+    (it.lo, ic.lo) (ct.hi, cc.hi)
+
+/-- Accepted interval replacement preserves scope and qualified behavior
+    and is no worse than the incumbent under every contained realization. -/
+theorem replacement_no_regression {B Context : Type}
+    [DecidableEq B] [DecidableEq Context]
+    {baselineContext candidateContext : Context}
+    {prior : PriorQualification B} {submission : BehaviorSubmission B}
+    {ct cc it ic : Bounds}
+    (h : acceptsReplacement baselineContext candidateContext prior submission ct cc it ic = true)
+    {candidateCost incumbentCost : Point}
+    (hc : realizes ct cc candidateCost)
+    (hi : realizes it ic incumbentCost) :
+    candidateContext = baselineContext ∧
+    (∀ b ∈ prior.qualified, b ∈ submission.offered) ∧
+    noWorse candidateCost incumbentCost := by
+  have accepted := (acceptsReplacement_iff baselineContext candidateContext
+    prior submission ct cc it ic).mp h
+  exact ⟨accepted.1, accepted.2.1, weaklySeparated_sound accepted.2.2 hc hi⟩
+
+/-- Scope mismatch cannot silently reuse performance evidence. -/
+example : acceptsRelease "venue-A/workload-1" "venue-B/workload-1"
+    { qualified := [1, 2] } { offered := [1, 2] } (10, 10) (1, 1) = false := by decide
+
+/-- An incomparable frontier trade-off is rejected, not relabeled an improvement. -/
+example : acceptsRelease "same-scope" "same-scope"
+    { qualified := [1, 2] } { offered := [1, 2] } (1, 10) (10, 1) = false := by decide
+
+example : acceptsRelease "same-scope" "same-scope"
+    { qualified := [1, 2] } { offered := [1, 2] } (10, 10) (1, 10) = true := by decide
+
+/-- The submission offers only behavior 1. The prior qualification still
+    names 2, and the submission has no field that can replace that set. -/
+example : acceptsRelease "same-scope" "same-scope"
+    { qualified := [1, 2] } { offered := [1] } (10, 10) (1, 1) = false := by decide
+
+/-- An empty submission offers no behavior. It is refused whenever the
+    prior qualification names one. -/
+example : acceptsRelease "same-scope" "same-scope"
+    { qualified := [1] } { offered := [] } (10, 10) (1, 1) = false := by decide
+
+theorem omitted_qualified_behavior_refused :
+    noQualifiedBehaviorLost ({ qualified := [1, 2] } : PriorQualification Nat)
+      ({ offered := [1] } : BehaviorSubmission Nat) = false := by
+  decide
+
+theorem empty_submission_refused_when_qualified :
+    noQualifiedBehaviorLost ({ qualified := [1] } : PriorQualification Nat)
+      ({ offered := [] } : BehaviorSubmission Nat) = false := by
+  decide
+
+#print axioms frontier_can_regress
+#print axioms admitted_frontier_exists
+#print axioms admitted_frontier_sound
+#print axioms noQualifiedBehaviorLost_iff
+#print axioms omitted_qualified_behavior_refused
+#print axioms empty_submission_refused_when_qualified
+#print axioms acceptsRelease_iff
+#print axioms acceptsReplacement_iff
+#print axioms replacement_no_regression
+#print axioms separated_sum
+#print axioms separated_parallel
+#print axioms not_scalarized
+#print axioms scalar_optimum_undominated
+#print axioms dominates_iff_interface
 
 end Pareto
 end SoftwareIsQuantifiable

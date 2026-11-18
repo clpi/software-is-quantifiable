@@ -22,6 +22,8 @@ namespace Fold
 
 variable {W : Type} [DecidableEq W]
 
+set_option linter.unusedSectionVars false
+
 /-- An accounting state: for each witness identity, whether it is
     recorded. Content addressing means a witness is its identity —
     two records with one identity are one witness. -/
@@ -41,30 +43,35 @@ def account : List W → Acct W
   | [] => empty
   | w :: ws => join (single w) (account ws)
 
+omit [DecidableEq W] in
 /-- The join is associative. -/
 theorem join_assoc (a b c : Acct W) : join (join a b) c = join a (join b c) := by
   funext x
   show ((a x || b x) || c x) = (a x || (b x || c x))
   cases h1 : a x <;> cases h2 : b x <;> cases h3 : c x <;> rfl
 
+omit [DecidableEq W] in
 /-- The join is commutative. -/
 theorem join_comm (a b : Acct W) : join a b = join b a := by
   funext x
   show (a x || b x) = (b x || a x)
   cases h1 : a x <;> cases h2 : b x <;> rfl
 
+omit [DecidableEq W] in
 /-- The join is idempotent. -/
 theorem join_idem (a : Acct W) : join a a = a := by
   funext x
   show (a x || a x) = a x
   cases h1 : a x <;> rfl
 
+omit [DecidableEq W] in
 /-- The empty accounting is a left identity for the join. -/
 theorem join_empty_left (a : Acct W) : join empty a = a := by
   funext x
   show (false || a x) = a x
   cases h1 : a x <;> rfl
 
+omit [DecidableEq W] in
 /-- The empty accounting is a right identity for the join. -/
 theorem join_empty_right (a : Acct W) : join a empty = a := by
   funext x
@@ -94,7 +101,7 @@ theorem account_eq_true_iff {ws : List W} {x : W} :
       have h' : (decide (x = w) || account ws x) = true := h
       by_cases hx : x = w
       · subst hx
-        exact List.mem_cons_self _ _
+        exact List.Mem.head _
       · rw [decide_false_of_not hx] at h'
         have h2 : account ws x = true := by simpa using h'
         exact List.mem_cons_of_mem w (IH.mp h2)
@@ -135,7 +142,7 @@ theorem account_ext {l₁ l₂ : List W} (h : ∀ x, x ∈ l₁ ↔ x ∈ l₂) 
     nothing. -/
 theorem account_perm {l₁ l₂ : List W} (h : List.Perm l₁ l₂) :
     account l₁ = account l₂ :=
-  account_ext (fun x => h.mem_iff)
+  account_ext (fun _ => h.mem_iff)
 
 /-- **Duplication-independence**: presenting every witness twice
     changes nothing; a repeated execution of the same step costs
@@ -169,7 +176,7 @@ theorem account_map_inl {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
     account (l.map (@Sum.inl W1 W2)) (Sum.inl w) = account l w := by
   by_cases h : account l w = true
   · have hmem : Sum.inl w ∈ l.map (@Sum.inl W1 W2) :=
-      List.mem_map_of_mem _ (account_eq_true_iff.mp h)
+      List.mem_map_of_mem (account_eq_true_iff.mp h)
     rw [h, account_eq_true_iff.mpr hmem]
   · have hf : account l w = false := by
       cases hb : account l w with
@@ -198,7 +205,7 @@ theorem account_map_inr {W1 W2 : Type _} [DecidableEq W1] [DecidableEq W2]
     account (l.map (@Sum.inr W1 W2)) (Sum.inr w) = account l w := by
   by_cases h : account l w = true
   · have hmem : Sum.inr w ∈ l.map (@Sum.inr W1 W2) :=
-      List.mem_map_of_mem _ (account_eq_true_iff.mp h)
+      List.mem_map_of_mem (account_eq_true_iff.mp h)
     rw [h, account_eq_true_iff.mpr hmem]
   · have hf : account l w = false := by
       cases hb : account l w with

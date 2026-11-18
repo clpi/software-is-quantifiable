@@ -830,11 +830,11 @@ theorem not_index_aligned_preorder :
   · intro q hq
     cases hq with
     | head _ =>
-      exact ⟨gate, List.mem_cons_of_mem _ (List.mem_cons_self _ _), noWorse_refl rfl⟩
+      exact ⟨gate, List.mem_cons_of_mem _ List.mem_cons_self, noWorse_refl rfl⟩
     | tail _ hmem =>
       cases hmem with
       | head _ =>
-        exact ⟨commit, List.mem_cons_self _ _, noWorse_refl rfl⟩
+        exact ⟨commit, List.mem_cons_self, noWorse_refl rfl⟩
       | tail _ hrest => cases hrest
   · intro h
     simp [axisLe] at h
@@ -876,6 +876,21 @@ theorem frontier_antichain {Symbol Measure : Type} [DecidableEq Symbol]
     (hp : p ∈ frontier space L) (hq : q ∈ frontier space L) :
     ¬ dominates space p q :=
   (frontier_exact.mp hq).2 p (frontier_exact.mp hp).1
+
+#print axioms noWorse_refl
+#print axioms noWorse_trans
+#print axioms noWorse_antisymm
+#print axioms not_dominates_self
+#print axioms dominates_trans
+#print axioms not_dominates_from_measures
+#print axioms measuresLe_append_iff
+#print axioms noWorse_append
+#print axioms dominates_append_of_halves
+#print axioms not_noWorse_append_converse
+#print axioms releaseLe_trans
+#print axioms releaseLe_append
+#print axioms not_index_aligned_preorder
+#print axioms frontier_exact
 
 end Interface
 end SoftwareIsQuantifiable

@@ -8,29 +8,62 @@ disproven, or recorded as a named premise. Nothing here is proven
 on the strength of source text: the verdicts below stand on the
 recorded build run with zero `sorry`s.
 
-Build: `lake build` with the pinned toolchain
-(`leanprover/lean4:v4.15.0`). Lean core only — no Mathlib — by
+Build: `lake --wfail build` with the pinned toolchain
+(`leanprover/lean4:v4.19.0`). Lean core only — no Mathlib — by
 choice: a core development that builds is worth more than a
 Mathlib development that cannot, and every claim here goes through
 with elementary means (lists, characteristic functions, counting
-over a finite universe, induction).
+over a finite universe, induction). `--wfail` treats warnings as
+errors.
 
 ## Build evidence
 
-Recorded 2026-11-18 on Lean 4.15.0 (commit 11651562caae).
-`lake build` exited 0 and compiled the root module, which
-imports every module below. Zero `sorry`s and zero added
-`axiom`s in the sources (search over the tree). Axiom audit of
-the headline theorems (`#print axioms`): each depends only on
-Lean's standard axioms (`propext`, `Classical.choice`,
-`Quot.sound`), or on none of them. No `sorryAx`, no custom
-axiom. In particular `Interface.noWorse_trans`,
-`Interface.dominates_trans`, `Pareto.separated_sum`,
-`Pareto.dominates_iff_interface`,
-`Coverage.unconstrained_witness_exists`, and
-`Coverage.not_ledger_from_placement` depend on no axioms.
-`Coverage.coverage` is unchanged: it is the projection of the
-named premise.
+Recorded on this branch with Lean 4.19.0 (commit `6caaee842e94`).
+`lake --wfail build` exited 0: warnings are errors, and the build
+reported none. Zero `sorry`s, zero `admit`s, and zero added
+`axiom`s. `#print axioms` on the headline theorems shows only
+`propext`, `Classical.choice`, and `Quot.sound`, or no axioms.
+`Coverage.coverage` is an abbreviation of `PlatformPremise.mediated`,
+not a theorem. `Pareto.separated_sum`, `Pareto.scalar_optimum_undominated`,
+`Pareto.dominates_iff_interface`, `Interface.noWorse_trans`,
+`Interface.dominates_trans`, and `Coverage.unrestricted_witness`
+depend on no axioms.
+
+The notes below are the earlier 4.15.0 records for the Pareto and
+ledger repairs that this branch merges. They are not the record for
+the current toolchain pin.
+
+### Pareto correction verification (2026-11-18)
+
+The preceding Pareto correction passed `lake build` with its unchanged
+Lean 4.15.0 pin. That recorded tree retained unused-variable/section-variable
+warnings in Fold, Coloring, and Coverage; they were not proof failures.
+The changed Pareto module also passed separately with
+`-DwarningAsError=true`. Independent review checked it and eight
+executable guards plus four proof controls under both Lean 4.15.0
+and 4.19.0. See [reproduction and evidence](verification/pareto-repair.md).
+
+### Integrated coverage and interval verification (2026-11-18)
+
+This change builds on `a1d84c603906edfbf34dd117e5bd5de986db3940`, retaining
+the validated-ledger/roster owner and the incumbent-guarded release gate.
+The final source was checked with the complete official Lean 4.15.0 Linux
+toolchain, compiler commit `11651562caae`:
+
+* `lake clean` followed by `lake --wfail build`: all five modules and root,
+  exit 0, no warnings.
+* All 63 declared theorems audited with `#print axioms`: exit 0; dependencies
+  limited to `propext`, `Classical.choice`, and `Quot.sound`.
+* The unchanged upstream eight executable guards and four proof controls:
+  exit 0 with `-DwarningAsError=true`.
+* Four damaged definitions rejected with exit 1: fabricating recorded
+  coverage, bypassing the validator, omitting compute non-regression,
+  and omitting behavior inclusion from the shared release gate.
+
+The [portable replayer and raw evidence](verification/coverage/README.md)
+are committed with the source. The final
+[record.json](verification/coverage/record.json) SHA-256 is
+`2e05339a2ebbe6070ef408552296b9a3e26e1e408b06141f383585637461ab60`.
 
 ## The claims and their verdicts
 
@@ -39,12 +72,11 @@ named premise.
 | 1 | Finiteness: a qualification — named software, named criteria, the behavior intended under them — forms a finite problem space (§20.0 presentation lemma, §20.1) | `Finiteness.schedules_finite`, `Finiteness.valid_orderings_finite`: a qualification's runs and venues are lists by construction, and an explicit finite list enumerates every schedule / valid ordering over them | PROVEN |
 | 2 | Fold correctness: the witness join is a semi-lattice, so the accounting fold is order- and duplication-independent and exactly recomputable (§17.4, §17.8, §22.D) | `Fold.join_assoc`, `Fold.join_comm`, `Fold.join_idem`, `Fold.account_eq_true_iff`, `Fold.account_ext`, `Fold.account_perm`, `Fold.account_append_self`, `Fold.account_append` | PROVEN |
 | 3 | Coloring: relative to a named snapshot, the coloring computed as a least fixed point over ground Horn rules is sound and complete, and the iteration terminates (§5, §16.8, §20) | `Coloring.exists_fixed_point` (a fixed point is reached within `U.length` steps), `Coloring.coloring_fixed`, `Coloring.coloring_sound`, `Coloring.coloring_complete` | PROVEN, under one stated side condition: the snapshot's universe names every conclusion the rules can produce — that is what makes the snapshot a snapshot |
-| 4 | Pareto: the computed ordering is Pareto optimal, never worse than the incumbent, regression-free (§20.1, §20.2, §21.3) | `Pareto.separated_sound` (separation under interval bounds decides dominance for every realization), `Pareto.frontier_nonempty`, `Pareto.frontier_not_dominated`, `Pareto.separated_of_refined` (refinement is monotone), `Pareto.accepts_iff` (the regression gate accepts exactly the candidates that drop no qualified behavior) | PROVEN at the level of bounds, which is the level the spec claims |
-| 4′ | Per-execution dominance: a dominated schedule finishes worse on every single execution | `Pareto.not_per_execution_dominance`: concrete counterexample (bounds [1, 100] against [2, 3]; the dominated schedule can realize 1 against 3) | DISPROVEN — the spec itself names this boundary at §20.4; dominance is a statement about bounds, never about one execution |
-| 5 | Coverage universality: every execution crosses the kernel boundary, hence is witnessed (§19) | `Coverage.coverage`, conditional on `Coverage.PlatformPremise` | PREMISE — assumed, named, never counted as proven. The spec states this as a protection-model argument on three named assumptions (§19.4) with an exact falsification condition (§19.5, `Coverage.coverage_iff`). Every coverage theorem of this form takes the premise as an argument |
-| 5a | Unconstrained witness existence (`Witness` is any pair of naturals with a matching id) discharges §19 | `Coverage.unconstrained_witness_exists` | PROVEN, and it does **not** discharge claim 5. A matching pair of naturals can be built with no sensor and no ledger. Ledger membership is the claim that still bites |
-| 5b | Ledger coverage: every execution occurs in a named ledger. Sensor-below and append-only imply it | `Coverage.LedgerPremise` (assumed); `Coverage.not_ledger_coverage_empty`; `Coverage.not_ledger_from_placement` | PREMISE for `LedgerPremise`. DISPROVEN as a theorem: the empty ledger misses execution `0`, and `True → True → LedgerPremise` fails on that ledger |
-| 5c | Named coverage composes: ledgers that cover each component's execution list cover the concatenation | `Coverage.ledger_coverage_compose` | PROVEN from the per-component membership hypotheses. It does not produce `LedgerPremise` for every `Execution` |
+| 4 | Pareto selection, separation, and no-regression admission | `Pareto.separated_sound`, `Pareto.frontier_nonempty`, `Pareto.separated_of_refined`, `Pareto.admitted_frontier_exists`, `Pareto.admitted_frontier_sound`, `Pareto.separated_sum`, `Pareto.separated_parallel`, `Pareto.replacement_no_regression` | PROVEN at the level of bounds and named scopes. `Pareto.frontier_can_regress` shows frontier membership alone permits an incomparable regression |
+| 4a | No qualified behavior lost, one half of admission | `Pareto.noQualifiedBehaviorLost`, `Pareto.noQualifiedBehaviorLost_iff`, used by `Pareto.acceptsRelease` | PROVEN. The qualified list is `PriorQualification.qualified` from the previous closure. The submission only offers `BehaviorSubmission.offered`. `omitted_qualified_behavior_refused` and `empty_submission_refused_when_qualified` refuse a submission that drops or empties that prior set |
+| 4′ | Overlapping intervals alone guarantee per-execution dominance | `Pareto.not_per_execution_dominance` | DISPROVEN. This does not refute `separated_sound` |
+| 4″ | Every Pareto point is a positive weighted-sum minimum; the Minkowski sum of frontiers is the frontier | `Pareto.not_scalarized`, `Pareto.scalar_frontier_point`, `Pareto.scalar_optimum_undominated`, `Pareto.minkowski_frontier_subset`, `Pareto.not_frontier_minkowski` | The subset direction and "a positive-weight minimum is undominated" are PROVEN. Both universal converses are DISPROVEN |
+| 5 | Coverage of named roster executions (§19) | `Coverage.coverage`, an `abbrev` of `PlatformPremise.mediated` | PREMISE, not a theorem. `sensorBelow` is `sensorSitsBelow sensorPrivilege observedPrivilege = true`, a comparison of two privilege ranks. `coverage_iff` and `coverage_missing_iff` state the falsification condition on the roster |
 | 6 | Profile preorder and Pareto dominance on a measure space (shared interface) | `Interface.noWorse_refl`, `Interface.noWorse_trans`, `Interface.noWorse_antisymm`, `Interface.not_dominates_self`, `Interface.dominates_trans`, `Interface.frontier_exact` | PROVEN on aligned profiles. `noWorse` is measures plus preserved observed behavior. The frontier of a finite list is exactly the undominated members |
 | 6′ | Measure improvement alone dominates | `Interface.not_dominates_from_measures` | DISPROVEN. Readings `0` against `1` on a minimize axis, with `observed` dropped, are `measuresLe` and `strictlyBetter` and not `dominates` |
 | 7 | Products of measure spaces: both halves `noWorse`, one half strict, yields dominance on the concatenation | `Interface.measuresLe_append_iff`, `Interface.noWorse_append`, `Interface.dominates_append_of_halves`, `Interface.dominates_append_left`, `Interface.dominates_append_right` | PROVEN |
@@ -60,7 +92,55 @@ named premise.
 | 12′ | Every Pareto point is the minimum of some positive weighted sum | `Pareto.not_scalarized`, with `(2, 2)` on the frontier by `Pareto.scalar_frontier_point`. The true direction is `Pareto.scalar_optimum_undominated` | DISPROVEN. `(2, 2)` is undominated by `(0, 3)` and `(3, 0)` and is not a minimizer of any positive weights. A positive-weight minimum is undominated |
 | 12″ | The Minkowski sum of frontiers is the frontier of the sum | `Pareto.minkowski_frontier_subset` (the direction that holds); `Pareto.not_frontier_minkowski` | The subset direction is PROVEN (an undominated sum is a sum of undominated points). Equality is DISPROVEN: `(0,3)+(3,0)=(3,3)` is dominated by `(2,0)+(0,2)=(2,2)` |
 | 12‴ | The two-axis order is the interface order on time and compute | `Pareto.dominates_iff_interface` | PROVEN. Both axes `minimize`, observed behavior held |
-| 13 | The theorems apply to a two-component command path (synthetic) | `Instance.service_schedule_card` (16), `Instance.service_valid_count` (8), `Instance.accounts_compose`, `Instance.not_coloring_distributes_on_path`, `Instance.service_compounds`, `Instance.path_separated`, `Instance.deployments_frontier`, `Instance.trimmed_rejected`, `Instance.cost_does_not_excuse_behavior_drop`, `Instance.request_two_uncovered`, `Instance.path_requests_covered` | PROVEN for the synthetic data in `Instance.lean`. Not measurements of a deployed system |
+| 13 | The theorems apply to a two-component command path (synthetic) | `Instance.service_schedule_card` (16), `Instance.service_valid_count` (8), `Instance.accounts_compose`, `Instance.not_coloring_distributes_on_path`, `Instance.service_compounds`, `Instance.path_separated`, `Instance.deployments_frontier`, `Instance.trimmed_rejected`, `Instance.empty_submission_rejected`, `Instance.request_two_uncovered`, `Instance.path_requests_covered` | PROVEN for the synthetic data in `Instance.lean`. Not measurements of a deployed system |
+
+## Coverage against an actual ledger
+
+`Coverage.unrestricted_witness` proves that a record containing the execution's
+ID and zero events witnesses every execution under the original ID-equality
+predicate. This construction reads no ledger. The protection-model premise
+therefore supplies no evidence that any particular collector observed a run.
+
+Use `Coverage.recorded valid ledger e` for a live ledger and
+`Coverage.missing valid ledger roster` for a finite, independently supplied
+roster. `recorded_exact` extracts a matching record present in the ledger
+that passed the supplied validator. `missing_exact` identifies each uncovered
+execution. `missing_append` proves that the executions missing from two
+combined ledgers are exactly those missing from both. With an empty ledger the
+entire roster is missing. Authenticity, unique execution IDs, completeness of
+the roster, and whether the validator enforces the intended policy are
+deployment obligations.
+
+`PlatformPremise valid ledger roster` uses that same `recorded` checker.
+`coverage` is an abbreviation of the premise field `mediated`, not a derived
+theorem. `sensorBelow` is `sensorSitsBelow sensorPrivilege observedPrivilege = true`:
+the sensor's privilege rank is strictly below the observed software's rank.
+`coverage_iff`
+requires roster membership for a missing execution to falsify coverage, and
+`coverage_missing_iff` identifies complete coverage with `missing = []`.
+`empty_roster_covered` establishes vacuous coverage of an empty actual domain;
+`empty_ledger_has_no_platform_premise` rejects mediation of a nonempty roster
+by an empty ledger. No separate witness-membership or coverage evaluator is
+introduced. Callers of the former unrestricted `PlatformPremise`, `coverage`,
+and `coverage_iff` argument lists must supply the validator, ledger, and roster.
+
+## Scope of the combined result
+
+`noQualifiedBehaviorLost` is one half of `acceptsRelease`. It compares the
+submission's offered behaviors to the prior qualification's qualified list.
+`acceptsReplacement` delegates to that same gate using candidate upper bounds
+and incumbent lower bounds. Its all-realizations theorem is conditional on
+those bounds. The exploratory frontier and the guarded frontier remain
+available.
+
+The finite schedule construction covers the supplied run and venue lists at
+the specified schedule length. Witness accounting proves set union, not
+physical authenticity or zero runtime replay cost. Coloring computes the
+conjunctive Horn consequences of the supplied seeds and rules; a dependency
+projection cannot replace a multi-premise rule with independent implications.
+External evidence must bind the candidate, workload, target, protocol, units,
+axes, and behavior contract. The formal build does not prove catalogue
+completeness, physical mediation, or the truth of an unvalidated observation.
 
 ## Reading the modules
 
@@ -78,8 +158,9 @@ named premise.
   termination by a counting argument over the universe; soundness
   and completeness against an inductive derivability relation.
 * `SoftwareIsQuantifiable/Pareto.lean` — claim 4 and the disproof
-  4′. Interval cost bounds on two axes; separation; the frontier;
-  monotone refinement; the regression gate.
+  4′. Interval cost bounds on two axes; separation; the exploratory
+  frontier; monotone refinement; guarded no-regression selection and
+  combined release admission and its interval adapter.
 * `SoftwareIsQuantifiable/Coverage.lean` — claim 5, as a premise
   with its falsification condition; the vacuous witness theorem;
   ledger coverage and its composition.
@@ -126,11 +207,13 @@ Release-sequence monotonicity is not in this repository.
 
 ## Discipline
 
-* Zero `sorry`s. Anything unproven would be listed in this table
-  as OPEN with what is missing; at the recorded build, no claim is
-  OPEN.
-* Release-sequence monotonicity is out of scope. It belongs to
-  `software-is-composable`.
+* Zero `sorry`s. The verdict applies to each exact formal statement
+  and its premises. Broader physical or end-to-end claims do not
+  follow from a successful build. Anything unproven is listed as OPEN;
+  at the recorded build, no claim is OPEN.
+* Release-sequence monotonicity, and the two-sided behavior order
+  `required ⊆ behaviors ⊆ allowed`, belong to the sibling repositories.
+  This repository names only the "no qualified behavior lost" half.
 * A claim that needed a side condition (claim 3's universe
   condition) is proven in its conditioned form, with the condition
   stated in the table — never silently weakened.

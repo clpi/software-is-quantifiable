@@ -1,0 +1,14 @@
+false
+/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-compute-gate.lean:298:60: error: unsolved goals
+B Context : Type
+inst✝¹ : DecidableEq B
+inst✝ : DecidableEq Context
+baselineContext candidateContext : Context
+qualified candidate : List B
+inc out : Point
+⊢ candidateContext = baselineContext →
+    (∀ (b : B), b ∈ qualified → b ∈ candidate) → (out.fst ≤ inc.fst ↔ noWorse out inc)
+'SoftwareIsQuantifiable.Pareto.frontier_can_regress' depends on axioms: [propext, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.admitted_frontier_exists' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SoftwareIsQuantifiable.Pareto.admitted_frontier_sound' depends on axioms: [propext]
+'SoftwareIsQuantifiable.Pareto.acceptsRelease_iff' depends on axioms: [propext, sorryAx, Quot.sound]
