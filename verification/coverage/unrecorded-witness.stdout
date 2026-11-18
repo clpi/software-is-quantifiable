@@ -1,0 +1,15 @@
+/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/unrecorded-witness.lean:92:85: error: unsolved goals
+valid : Witness → Bool
+ledger : List Witness
+e : Execution
+⊢ ∃ w, w ∈ ledger ∧ valid w = true ∧ w.exec = e.id
+/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/unrecorded-witness.lean:120:40: error: unsolved goals
+valid : Witness → Bool
+roster : List Execution
+⊢ ∀ (a : Execution), ¬a ∈ roster
+/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/unrecorded-witness.lean:163:0: error: expression
+  !recorded (fun w => decide (w.events > 0)) [{ exec := 3, events := 0 }, { exec := 4, events := 1 }] { id := 3 }
+did not evaluate to `true`
+'SoftwareIsQuantifiable.Coverage.recorded_exact' depends on axioms: [propext, sorryAx]
+'SoftwareIsQuantifiable.Coverage.missing_exact' depends on axioms: [propext, sorryAx]
+'SoftwareIsQuantifiable.Coverage.missing_append' depends on axioms: [propext, Quot.sound]

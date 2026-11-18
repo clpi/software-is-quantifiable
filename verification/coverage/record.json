@@ -1,0 +1,228 @@
+{
+  "started_at": "2026-11-18T09:16:48.427320+00:00",
+  "base": "a1d84c603906edfbf34dd117e5bd5de986db3940",
+  "commands": [
+    {
+      "name": "lean-version",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "--version"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0,
+      "stdout_sha256": "db073805861687782e631690d1bbfe26122f2e294bb8c63320e6911c77029278",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "clean",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "clean"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "build",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "--wfail",
+        "build"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0,
+      "stdout_sha256": "447b25b6176ea23f5b5e21243f8176b8de42c2847293e54c0ac20eead8dfdea6",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "upstream-pareto-controls",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "-DwarningAsError=true",
+        "verification/ParetoControls.lean"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "axioms",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "-DwarningAsError=true",
+        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/Axioms.lean"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0,
+      "stdout_sha256": "d917bae232a321bda0ad0173066aba6a91c907c274b98ccd014d59727c94ecc4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "unrecorded-witness",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/unrecorded-witness.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "stdout_sha256": "ca91829db372e9e7d28792a767b687d7d385b9838eba6ca9fa7542d277a673b8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "missing-validator",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-validator.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "stdout_sha256": "e88c7fc1fe9a405f3d38995ea5c8cdaef13c18e5f59b635e19d9ae8f3aa42aed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "missing-compute-gate",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-compute-gate.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "stdout_sha256": "51e33bfbae0569cb223a21e06ac74214c7859c0eb25c7cdf0f524abc28f6f5d3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "missing-behavior-gate",
+      "argv": [
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lake",
+        "env",
+        "/workspace/scratch/08a674553f4b/topology/toolchains/lean-4.15.0-linux/bin/lean",
+        "/workspace/scratch/08a674553f4b/topology/quantifiable-validation/run/missing-behavior-gate.lean"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1,
+      "stdout_sha256": "486e0aef0ad4ad46be2c9b84ddcab800cb95342f518a1f249b7ef3d1ccd242e7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "lean_version": "Lean (version 4.15.0, x86_64-unknown-linux-gnu, commit 11651562caae, Release)",
+  "lean_sha256": "eacf754d25ae86ea076882a34b9444f2485659d9df4266b821443b28ca95a215",
+  "sources": {
+    "SoftwareIsQuantifiable/Coloring.lean": "6e54ed8c7a3e927b636501675931a131b867abaae5b8706fd7a3708c5f3b3fa6",
+    "SoftwareIsQuantifiable/Coverage.lean": "c80f3b1dfcf6649f2bc32714a86674edbb45f80427308176d9d2d01f61a9955c",
+    "SoftwareIsQuantifiable/Finiteness.lean": "fa48e95e71a4c4d2451b04d4c7f053bb97a5eecc87ccb2c1b687b6875844c601",
+    "SoftwareIsQuantifiable/Fold.lean": "93a764ea2c26f49227c0c1b557750c81c98b44f14d5f1b5e07f475df47d651c8",
+    "SoftwareIsQuantifiable/Pareto.lean": "20214e974be2df2fd1e9e98f8f04f9739ad3beeeacec2883e85b6d21265d4e40",
+    "SoftwareIsQuantifiable.lean": "53b3a207bdb18ce34192da37fcde9aaa04c7e6a1a8627e70a59ef0c367056812",
+    "lakefile.lean": "c37338fd852ab251493663a094e9326812e81eab24507a6b059336aa6a3caf1f",
+    "verification/ParetoControls.lean": "60ad9aaf425aef9b87ee689eff17bbd42aeda95aa29640bd37d0d299354a4dad"
+  },
+  "theorem_count": 63,
+  "theorem_names": [
+    "SoftwareIsQuantifiable.Coloring.and_eq_true",
+    "SoftwareIsQuantifiable.Coloring.holds_eq_true",
+    "SoftwareIsQuantifiable.Coloring.any_eq_true",
+    "SoftwareIsQuantifiable.Coloring.le_step",
+    "SoftwareIsQuantifiable.Coloring.iter_eq_of_fixed",
+    "SoftwareIsQuantifiable.Coloring.le_iter",
+    "SoftwareIsQuantifiable.Coloring.count_le",
+    "SoftwareIsQuantifiable.Coloring.count_le_of_le",
+    "SoftwareIsQuantifiable.Coloring.count_lt_of_le_add",
+    "SoftwareIsQuantifiable.Coloring.exists_added",
+    "SoftwareIsQuantifiable.Coloring.count_iter_ge",
+    "SoftwareIsQuantifiable.Coloring.exists_fixed_point",
+    "SoftwareIsQuantifiable.Coloring.coloring_fixed",
+    "SoftwareIsQuantifiable.Coloring.step_sound",
+    "SoftwareIsQuantifiable.Coloring.iter_sound",
+    "SoftwareIsQuantifiable.Coloring.deriv_closed",
+    "SoftwareIsQuantifiable.Coloring.coloring_sound",
+    "SoftwareIsQuantifiable.Coloring.coloring_complete",
+    "SoftwareIsQuantifiable.Coloring.seed_le_coloring",
+    "SoftwareIsQuantifiable.Coverage.coverage",
+    "SoftwareIsQuantifiable.Coverage.coverage_iff",
+    "SoftwareIsQuantifiable.Coverage.unrestricted_witness",
+    "SoftwareIsQuantifiable.Coverage.recorded_exact",
+    "SoftwareIsQuantifiable.Coverage.missing_exact",
+    "SoftwareIsQuantifiable.Coverage.recorded_append",
+    "SoftwareIsQuantifiable.Coverage.missing_append",
+    "SoftwareIsQuantifiable.Coverage.missing_empty",
+    "SoftwareIsQuantifiable.Coverage.coverage_missing_iff",
+    "SoftwareIsQuantifiable.Coverage.empty_roster_covered",
+    "SoftwareIsQuantifiable.Coverage.empty_ledger_has_no_platform_premise",
+    "SoftwareIsQuantifiable.Finiteness.mem_listsOfLen",
+    "SoftwareIsQuantifiable.Finiteness.mem_alphabet",
+    "SoftwareIsQuantifiable.Finiteness.schedules_finite",
+    "SoftwareIsQuantifiable.Finiteness.valid_orderings_finite",
+    "SoftwareIsQuantifiable.decide_false_of_not",
+    "SoftwareIsQuantifiable.Fold.join_assoc",
+    "SoftwareIsQuantifiable.Fold.join_comm",
+    "SoftwareIsQuantifiable.Fold.join_idem",
+    "SoftwareIsQuantifiable.Fold.join_empty_left",
+    "SoftwareIsQuantifiable.Fold.join_empty_right",
+    "SoftwareIsQuantifiable.Fold.account_append",
+    "SoftwareIsQuantifiable.Fold.account_eq_true_iff",
+    "SoftwareIsQuantifiable.Fold.account_ext",
+    "SoftwareIsQuantifiable.Fold.account_perm",
+    "SoftwareIsQuantifiable.Fold.account_append_self",
+    "SoftwareIsQuantifiable.Fold.account_cons_self",
+    "SoftwareIsQuantifiable.Pareto.dominates_trans",
+    "SoftwareIsQuantifiable.Pareto.separated_sound",
+    "SoftwareIsQuantifiable.Pareto.separated_of_refined",
+    "SoftwareIsQuantifiable.Pareto.exists_undominated_aux",
+    "SoftwareIsQuantifiable.Pareto.frontier_nonempty",
+    "SoftwareIsQuantifiable.Pareto.frontier_not_dominated",
+    "SoftwareIsQuantifiable.Pareto.and_eq_true",
+    "SoftwareIsQuantifiable.Pareto.accepts_iff",
+    "SoftwareIsQuantifiable.Pareto.not_per_execution_dominance",
+    "SoftwareIsQuantifiable.Pareto.frontier_can_regress",
+    "SoftwareIsQuantifiable.Pareto.admitted_noWorse",
+    "SoftwareIsQuantifiable.Pareto.admitted_frontier_exists",
+    "SoftwareIsQuantifiable.Pareto.admitted_frontier_sound",
+    "SoftwareIsQuantifiable.Pareto.acceptsRelease_iff",
+    "SoftwareIsQuantifiable.Pareto.weaklySeparated_sound",
+    "SoftwareIsQuantifiable.Pareto.acceptsReplacement_iff",
+    "SoftwareIsQuantifiable.Pareto.replacement_no_regression"
+  ],
+  "allowed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "unexpected_axioms": [],
+  "controls": [
+    {
+      "name": "unrecorded-witness",
+      "mutant_sha256": "48483753c4b83123c8dd1eec2af84f9b37a2001e45fb0bd4797c43520f902949",
+      "result": "rejected"
+    },
+    {
+      "name": "missing-validator",
+      "mutant_sha256": "e8940fb806f3bfd47b444e8ef721c801de27640b465e08577ac6726fd758a657",
+      "result": "rejected"
+    },
+    {
+      "name": "missing-compute-gate",
+      "mutant_sha256": "21e5c7276a7c31ecd1378e02dba85856c46006db54f6108b23c8a9903286918f",
+      "result": "rejected"
+    },
+    {
+      "name": "missing-behavior-gate",
+      "mutant_sha256": "5089c9c5eb72076eec5cd7dd4e0f291b1ef3100ac102151468ed1f6917cc8a34",
+      "result": "rejected"
+    }
+  ],
+  "status": "passed",
+  "finished_at": "2026-11-18T09:16:59.636157+00:00"
+}

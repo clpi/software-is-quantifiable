@@ -40,6 +40,7 @@ theorem and_eq_true {a b : Bool} (h : (a && b) = true) :
     | false => simp at h
     | true => exact ⟨rfl, rfl⟩
 
+omit [DecidableEq F] in
 theorem holds_eq_true {s : State F} {l : List F} :
     holds s l = true ↔ ∀ p ∈ l, s p = true := by
   induction l with
@@ -148,6 +149,7 @@ def count : List F → State F → Nat
   | [], _ => 0
   | a :: U, s => contrib (s a) + count U s
 
+omit [DecidableEq F] in
 /-- The count never exceeds the universe. -/
 theorem count_le (U : List F) (s : State F) : count U s ≤ U.length := by
   induction U with
@@ -158,6 +160,7 @@ theorem count_le (U : List F) (s : State F) : count U s ≤ U.length := by
     | true => show 1 + count U s ≤ U.length + 1; omega
     | false => show 0 + count U s ≤ U.length + 1; omega
 
+omit [DecidableEq F] in
 /-- Counting is monotone in the state. -/
 theorem count_le_of_le : ∀ (U : List F) {p q : State F},
     (∀ x ∈ U, p x = true → q x = true) → count U p ≤ count U q := by
@@ -182,6 +185,7 @@ theorem count_le_of_le : ∀ (U : List F) {p q : State F},
       show 0 + count U p ≤ contrib (q a) + count U q
       omega
 
+omit [DecidableEq F] in
 /-- Counting strictly grows when a state grows somewhere in the
     universe. -/
 theorem count_lt_of_le_add : ∀ (U : List F) {p q : State F},
@@ -399,7 +403,7 @@ theorem deriv_closed (rules : List (Rule F)) (seed : State F) :
 theorem coloring_sound (rules : List (Rule F)) (U : List F) (seed : State F) :
     ∀ f, coloring rules U seed f = true → Deriv rules seed f :=
   fun f hf => iter_sound rules seed (U.length + 1) seed
-    (fun g hg => Deriv.seed hg) f hf
+    (fun _ hg => Deriv.seed hg) f hf
 
 /-- **Completeness of the coloring**: every derivable fact is
     colored. Together with soundness, the coloring is exactly the
@@ -407,7 +411,7 @@ theorem coloring_sound (rules : List (Rule F)) (U : List F) (seed : State F) :
 theorem coloring_complete (rules : List (Rule F)) (U : List F) (seed : State F)
     (hU : ∀ r ∈ rules, r.conclusion ∈ U) :
     ∀ f, Deriv rules seed f → coloring rules U seed f = true :=
-  fun f hf => deriv_closed rules seed hf (coloring rules U seed)
+  fun _ hf => deriv_closed rules seed hf (coloring rules U seed)
     (fun g hg => le_iter rules (U.length + 1) seed g hg)
     (coloring_fixed rules U seed hU)
 
