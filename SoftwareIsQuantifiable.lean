@@ -5,3 +5,5 @@ import SoftwareIsQuantifiable.Coloring
 import SoftwareIsQuantifiable.Pareto
 import SoftwareIsQuantifiable.Coverage
 import SoftwareIsQuantifiable.Instance
+import SoftwareIsQuantifiable.Spine.Core
+import SoftwareIsQuantifiable.Spine.Delta
