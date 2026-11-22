@@ -9,3 +9,4 @@ import SoftwareIsQuantifiable.Spine.Core
 import SoftwareIsQuantifiable.Spine.Delta
 import SoftwareIsQuantifiable.Spine.Closure
 import SoftwareIsQuantifiable.Spine.Sense
+import SoftwareIsQuantifiable.Spine.Final
